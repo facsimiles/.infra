@@ -27,8 +27,8 @@ function prettyPrintEnv() {
   )
   for (const [key, value] of Object.entries(process.env)) {
     console.log(
-      `${colors.green}${key}${colors.reset}: ` +
-      `${colors.yellow}${value}${colors.reset}` +
+      `${colors.green}${key}${colors.reset}: `
+      `${colors.yellow}${value}${colors.reset}`
     )
   }
 }
