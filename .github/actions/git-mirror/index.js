@@ -21,13 +21,13 @@ const colors = {
 
 function prettyPrintEnv() {
   console.log(
-    `${colors.bold}${colors.underline}${colors.blue}`
-    `Environment Variables:`
+    `${colors.bold}${colors.underline}${colors.blue}` +
+    `Environment Variables:` +
     `${colors.reset}`
   )
   for (const [key, value] of Object.entries(process.env)) {
     console.log(
-      `${colors.green}${key}${colors.reset}: `
+      `${colors.green}${key}${colors.reset}: ` +
       `${colors.yellow}${value}${colors.reset}`
     )
   }
