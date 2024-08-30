@@ -38,7 +38,7 @@ function setOutput(name, value) {
 
 // Helper function to get input from environment variables
 function getInput(name) {
-  return process.env[`INPUT_${name.replace(/-/g, '_').toUpperCase()}`];
+  return process.env[`INPUT_${name}`];
 }
 
 // Main function
