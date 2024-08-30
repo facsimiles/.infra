@@ -6,11 +6,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  'mirror-beatifulsoup':
-    environment: 'mirror--beautifulsoup'
-    uses: './.github/workflows/.git-mirror.yml'
-    with:
-      'source-repo': 'https://git.launchpad.net/beautifulsoup'
-      'target-repo': 'git@github.com:facsimiles/beautifulsoup.git'
-    secrets:
-      'TARGET_SSH_KEY': ${{ secrets['TARGET_SSH_KEY'] }}
+  'mirror':
+    strategy:
+      matrix:
+        'json':
+          - |
+            {
+              "name": "beautifulsoup"
+            }
+  
+    environment:
+      name: "mirror--${{ fromJSON(matrix['json'])['name'] }}"
+      url: "https://github.com/facsimiles/${{ fromJSON(matrix['json'])['name'] }}"
+
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@main'
+      - uses: './.github/actions/git-mirror'
+        with:
+          'source-repo':    ${{ vars['source-repo'] }}
+          'target-repo':    ${{ vars['target-repo'] }}
+          'target-ssh-key': ${{ secrets['TARGET_SSH_KEY'] }}
