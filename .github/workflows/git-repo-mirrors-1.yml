@@ -1,0 +1,16 @@
+name: "Git Mirrors #1"
+
+on:
+  schedule:
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  # mirror-repo-1:
+  #   uses: ./.github/workflows/.mirror-git-repo.yml
+  #   with:
+  #     source-repo: 'https://github.com/source-owner/repo-1.git'
+  #     target-repo: 'https://github.com/target-owner/repo-1-mirror.git'
+  #     use-ssh: false
+  #   secrets:
+  #     TARGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
