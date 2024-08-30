@@ -24,8 +24,16 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@main'
-      - uses: './.github/actions/git-mirror'
+      - id: 'mirror'
+        uses: './.github/actions/git-mirror'
         with:
           'source-repo':    ${{ vars['SOURCE_REPO'] }}
           'target-repo':    ${{ vars['TARGET_REPO'] }}
           'target-ssh-key': ${{ secrets['TARGET_SSH_KEY'] }}
+
+      - name: "Log mirroring results"
+        run: |
+          echo "Source repo path:  ${{ steps['mirror'].outputs['source-repo-path']  }}"
+          echo "Target repo path:  ${{ steps['mirror'].outputs['target-repo-path']  }}"
+          echo "Mirrored branches: ${{ steps['mirror'].outputs['mirrored-branches'] }}"
+          echo "Last commit hash:  ${{ steps['mirror'].outputs['last-commit-hash']  }}"
