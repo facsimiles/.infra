@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const crypto = require('crypto');
 
 // ANSI color codes
@@ -17,7 +17,6 @@ const colors = {
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
 }
-
 
 function prettyPrintEnv() {
   console.log(
@@ -43,13 +42,15 @@ function log(message, color = 'reset', emoji = '') {
 }
 
 // Function to execute shell commands
-function exec(command) {
+function exec(command, args) {
+  const cmd_str = [command, ...args].map(arg => `\`${arg}\``).join(' ')
   try {
-    return execSync(command, { encoding: 'utf8', stdio: 'pipe' });
+    console.log(`::debug::Executing command: ${cmd_str}`)
+    return execFileSync(command, args, { encoding: 'utf8', stdio: 'pipe' })
   } catch (error) {
-    log(`Error executing command: ${command}`, 'red', '❌');
-    log(error.message, 'red');
-    process.exit(1);
+    log(`Error executing command: ${cmd_str}`, 'red', '❌')
+    log(error.message, 'red')
+    process.exit(1)
   }
 }
 
@@ -97,12 +98,12 @@ async function main() {
         fs.appendFileSync(path.join(sshDir, 'config'), 'IdentityFile ~/.ssh/target_key\n');
       }
 
-      exec('ssh-keyscan -H github.com >> ~/.ssh/known_hosts');
+      exec('ssh-keyscan', ['-H', 'github.com', '>>', '~/.ssh/known_hosts']);
     }
 
     // Clone source repository
     log('Cloning source repository...', 'cyan', '📥');
-    exec(`git clone --mirror ${getInput('source-repo')} source_repo`);
+    exec('git', ['clone', '--mirror', getInput('source-repo'), 'source_repo']);
     const sourceRepoPath = path.join(process.cwd(), 'source_repo');
     setOutput('source-repo-path', sourceRepoPath);
 
@@ -119,16 +120,16 @@ async function main() {
     // Mirror repository
     log('Mirroring repository...', 'green', '🔄');
     process.chdir(sourceRepoPath);
-    exec(`git push --mirror ${targetRepoUrl}`);
+    exec('git', ['push', '--mirror', targetRepoUrl]);
 
     // Get mirrored branches
-    const branches = exec('git branch -r').split('\n')
+    const branches = exec('git', ['branch', '-r']).split('\n')
       .map(branch => branch.trim().replace('origin/', ''))
       .filter(Boolean);
     setOutput('mirrored-branches', branches.join(','));
 
     // Get last commit hash
-    const lastCommitHash = exec('git rev-parse HEAD').trim();
+    const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim();
     setOutput('last-commit-hash', lastCommitHash);
 
     log('Repository mirrored successfully!', 'green', '✅');
