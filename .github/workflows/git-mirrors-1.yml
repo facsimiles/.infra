@@ -6,11 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  # mirror-repo-1:
-  #   uses: ./.github/workflows/.mirror-git-repo.yml
-  #   with:
-  #     source-repo: 'https://github.com/source-owner/repo-1.git'
-  #     target-repo: 'https://github.com/target-owner/repo-1-mirror.git'
-  #     use-ssh: false
-  #   secrets:
-  #     TARGET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  'mirror-beatifulsoup':
+    uses: './.github/workflows/.git-mirror.yml'
+    with:
+      'source-repo': 'https://git.launchpad.net/beautifulsoup'
+      'target-repo': 'git@github.com:facsimiles/beautifulsoup.git'
+    secrets:
+      'TARGET_SSH_KEY': ${{ secrets.TARGET_SSH_KEY__BEATIFULSOUP }}
