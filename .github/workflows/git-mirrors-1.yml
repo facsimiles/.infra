@@ -14,6 +14,8 @@ jobs:
             {
               "name": "beautifulsoup"
             }
+
+    name: "Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
     environment:
       name: "mirror--${{ fromJSON(matrix['json'])['name'] }}"
