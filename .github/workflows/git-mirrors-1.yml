@@ -7,9 +7,10 @@ on:
 
 jobs:
   'mirror-beatifulsoup':
+    environment: 'mirror--beautifulsoup'
     uses: './.github/workflows/.git-mirror.yml'
     with:
       'source-repo': 'https://git.launchpad.net/beautifulsoup'
       'target-repo': 'git@github.com:facsimiles/beautifulsoup.git'
     secrets:
-      'TARGET_SSH_KEY': ${{ secrets.TARGET_SSH_KEY__BEATIFULSOUP }}
+      'TARGET_SSH_KEY': ${{ secrets['TARGET_SSH_KEY'] }}
