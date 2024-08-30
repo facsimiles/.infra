@@ -24,8 +24,7 @@ jobs:
       - name: "Checkout"
         uses: 'actions/checkout@main'
 
-      - name: "Mirror Repository"
-        uses: './.github/actions/git-mirror'
+      - uses: './.github/actions/git-mirror'
         with:
           'source-repo':    ${{ inputs['source-repo']     }}
           'target-repo':    ${{ inputs['target-repo']     }}
