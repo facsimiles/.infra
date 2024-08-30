@@ -1,45 +1,41 @@
-name: Reusable Git Mirror Workflow
+name: "Reusable Git Mirror Workflow"
 
 on:
   workflow_call:
     inputs:
-      source-repo:
+      'source-repo':
         required: true
         type: string
-      target-repo:
+      'target-repo':
         required: true
         type: string
-      use-ssh:
-        required: false
-        type: boolean
-        default: false
     secrets:
-      SOURCE_SSH_KEY:
+      'SOURCE_SSH_KEY':
         required: false
-      TARGET_SSH_KEY:
+      'TARGET_SSH_KEY':
         required: false
-      TARGET_TOKEN:
+      'TARGET_TOKEN':
         required: false
 
 jobs:
-  mirror-repository:
+  'mirror-repository':
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@main
+      - name: "Checkout"
+        uses: 'actions/checkout@main'
 
-      - name: Mirror Repository
-        uses: ./.github/actions/git-mirror
+      - name: "Mirror Repository"
+        uses: './.github/actions/git-mirror'
         with:
-          source-repo: ${{ inputs.source-repo }}
-          target-repo: ${{ inputs.target-repo }}
-          source-ssh-key: ${{ secrets.SOURCE_SSH_KEY }}
-          target-ssh-key: ${{ inputs.use-ssh && secrets.TARGET_SSH_KEY || '' }}
-          target-token: ${{ !inputs.use-ssh && secrets.TARGET_TOKEN || '' }}
+          'source-repo':    ${{ inputs['source-repo']     }}
+          'target-repo':    ${{ inputs['target-repo']     }}
+          'source-ssh-key': ${{ secrets['SOURCE_SSH_KEY'] }}
+          'target-ssh-key': ${{ secrets['TARGET_SSH_KEY'] }}
+          'target-token':   ${{ secrets['TARGET_TOKEN']   }}
 
       - name: Log mirroring results
         run: |
-          echo "Source repo path: ${{ steps.mirror.outputs.source-repo-path }}"
-          echo "Target repo path: ${{ steps.mirror.outputs.target-repo-path }}"
-          echo "Mirrored branches: ${{ steps.mirror.outputs.mirrored-branches }}"
-          echo "Last commit hash: ${{ steps.mirror.outputs.last-commit-hash }}"
+          echo "Source repo path:  ${{ steps['mirror'].outputs['source-repo-path']  }}"
+          echo "Target repo path:  ${{ steps['mirror'].outputs['target-repo-path']  }}"
+          echo "Mirrored branches: ${{ steps['mirror'].outputs['mirrored-branches'] }}"
+          echo "Last commit hash:  ${{ steps['mirror'].outputs['last-commit-hash']  }}"
