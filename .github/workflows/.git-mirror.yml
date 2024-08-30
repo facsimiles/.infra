@@ -1,4 +1,4 @@
-name: Reusable Mirror Git Repository Workflow
+name: Reusable Git Mirror Workflow
 
 on:
   workflow_call:
@@ -26,10 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@main
 
       - name: Mirror Repository
-        uses: ./mirror-git-repo
+        uses: ./.github/actions/git-mirror
         with:
           source-repo: ${{ inputs.source-repo }}
           target-repo: ${{ inputs.target-repo }}
