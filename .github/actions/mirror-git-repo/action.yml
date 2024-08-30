@@ -1,0 +1,36 @@
+name: 'Git Repository Mirror Action'
+description: 'Mirrors a git repository to a specified GitHub repository'
+inputs:
+  source-repo:
+    description: 'URL of the source git repository'
+    required: true
+  source-ssh-key:
+    description: 'SSH private key for the source repository (if needed)'
+    required: false
+  target-repo:
+    description: 'URL of the target GitHub repository'
+    required: true
+  target-ssh-key:
+    description: 'SSH deploy key for the target repository'
+    required: false
+  target-token:
+    description: 'GitHub Personal Access Token for the target repository'
+    required: false
+  branch:
+    description: 'Branch to mirror (default: all branches)'
+    required: false
+    default: '--all'
+
+outputs:
+  source-repo-path:
+    description: 'Resolved path of the source repository'
+  target-repo-path:
+    description: 'Resolved path of the target repository'
+  mirrored-branches:
+    description: 'List of branches that were mirrored'
+  last-commit-hash:
+    description: 'Hash of the last mirrored commit'
+
+runs:
+  using: 'node20'
+  main: 'index.js'
