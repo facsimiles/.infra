@@ -18,7 +18,8 @@ on:
         required: false
 
 jobs:
-  'mirror-repository':
+  'git-mirror':
+    name: "Mirror ${{ inputs['source-repo'] }}"
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout"
