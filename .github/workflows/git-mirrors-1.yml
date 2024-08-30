@@ -26,6 +26,6 @@ jobs:
       - uses: 'actions/checkout@main'
       - uses: './.github/actions/git-mirror'
         with:
-          'source-repo':    ${{ vars['source-repo'] }}
-          'target-repo':    ${{ vars['target-repo'] }}
+          'source-repo':    ${{ vars['SOURCE_REPO'] }}
+          'target-repo':    ${{ vars['TARGET_REPO'] }}
           'target-ssh-key': ${{ secrets['TARGET_SSH_KEY'] }}
