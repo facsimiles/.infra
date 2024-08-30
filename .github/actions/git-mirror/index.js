@@ -16,7 +16,7 @@ const colors = {
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
-};
+}
 
 
 function prettyPrintEnv() {
@@ -24,15 +24,18 @@ function prettyPrintEnv() {
     `${colors.bold}${colors.underline}${colors.blue}` +
     `Environment Variables:` +
     `${colors.reset}`
-  )
+  );
   for (const [key, value] of Object.entries(process.env)) {
+    let displayValue = value;
+    if (value.length > 255 || value.includes('\n')) {
+      displayValue = value.slice(0, 252) + '...';
+    }
     console.log(
       `${colors.green}${key}${colors.reset}: ` +
-      `${colors.yellow}${value}${colors.reset}`
-    )
+      `${colors.yellow}${displayValue}${colors.reset}`
+    );
   }
 }
-
 
 // Logging function with colors and emojis
 function log(message, color = 'reset', emoji = '') {
@@ -58,12 +61,12 @@ function setOutput(name, value) {
 
 // Helper function to get input from environment variables
 function getInput(name) {
-  return process.env[`INPUT_${name}`];
+  return process.env[`INPUT_${name.toUpperCase()}`];
 }
 
 // Main function
 async function main() {
-  prettyPrintEnv()
+  // prettyPrintEnv()
   
   try {
     // Input validation
