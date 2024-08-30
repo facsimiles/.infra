@@ -6,6 +6,10 @@ const crypto = require('crypto');
 // ANSI color codes
 const colors = {
   reset: '\x1b[0m',
+
+  bold: "\x1b[1m",
+  underline: "\x1b[4m",
+  
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
@@ -13,6 +17,22 @@ const colors = {
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
 };
+
+
+function prettyPrintEnv() {
+  console.log(
+    `${colors.bold}${colors.underline}${colors.blue}` +
+    `Environment Variables:` +
+    `${colors.reset}` +
+  )
+  for (const [key, value] of Object.entries(process.env)) {
+    console.log(
+      `${colors.green}${key}${colors.reset}: ` +
+      `${colors.yellow}${value}${colors.reset}` +
+    )
+  }
+}
+
 
 // Logging function with colors and emojis
 function log(message, color = 'reset', emoji = '') {
@@ -43,6 +63,8 @@ function getInput(name) {
 
 // Main function
 async function main() {
+  prettyPrintEnv()
+  
   try {
     // Input validation
     const requiredInputs = ['source-repo', 'target-repo'];
