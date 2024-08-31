@@ -6,11 +6,11 @@ const { execFileSync } = require('child_process')
 
 
 const inputNames = {
-  sourceRepo: 'source-repo',
-  targetRepo: 'target-repo',
+  sourceRepo:   'source-repo',
+  targetRepo:   'target-repo',
   sourceSshKey: 'source-ssh-key',
   targetSshKey: 'target-ssh-key',
-  targetToken: 'target-token',
+  targetToken:  'target-token',
 }
 
 const outputNames = {
@@ -90,20 +90,20 @@ class Inputs {
 function log(message) {
   function formatNum(prefix, num, suffix, len) {
     const str = num ? num.toString() : ''
-    return colorize("0", colors.rgb(60, 60, 60)).repeat(len - str.length) + prefix + str + suffix
+    return colorize("0", colors.rgb(60)).repeat(len - str.length) + prefix + str + suffix
   }
   const elapsed = Date.now() - START_TIME
   const seconds = formatNum(colors.rgb(130, 100, 220), Math.floor(elapsed / 1000), colors.reset, 3)
   const milliseconds = formatNum(colors.rgb(100, 130, 255), elapsed % 1000, colors.reset, 3)
   
   const elapsedStr = [
-    colorize("[", colors.rgb(170, 170, 170)),
+    colorize("[", colors.rgb(170)),
     colorize("+", colors.blue),
     `${seconds}`,
     colorize(".", colors.blue),
     `${milliseconds}`,
-    colorize("ms", colors.rgb(130, 130, 130)),
-    colorize("]", colors.rgb(170, 170, 170)),
+    colorize("ms", colors.rgb(130)),
+    colorize("]", colors.rgb(170)),
   ].join('')
 
   console.log(`${elapsedStr} ${colorize(message, colors.reset)}`)
@@ -131,9 +131,9 @@ function prettyPrintEnv(filterCallback) {
 
 // Function to execute shell commands
 function exec(command, args, options = {}) {
-  const backtick = colorize('`', colors.rgb(100, 100, 100))
+  const backtick = colorize('`', colors.rgb(100))
   const cmd_str = [command, ...args].map(arg =>
-    backtick + colorize(arg, colors.rgb(200, 200, 200)) + backtick
+    backtick + colorize(arg, colors.rgb(200)) + backtick
   ).join(' ')
   log(colorize(`🚀 Executing command: `, colors.magenta) + cmd_str)
   const output = execFileSync(command, args, {
