@@ -117,7 +117,7 @@ function prettyPrintEnv(filterCallback) {
 
 // Function to execute shell commands
 function exec(command, args, options = {}) {
-  const backtick = colorize('`', color.rgb(100, 100, 100))
+  const backtick = colorize('`', colors.rgb(100, 100, 100))
   const cmd_str = [command, ...args].map(arg =>
     backtick + colorize(str, colors.rgb(200, 200, 200)) + backtick
   ).join(' ')
@@ -149,12 +149,11 @@ async function withCwd(directory, callback) {
 function setupSSHAgent(sourceSshKey, targetSshKey) {
   log(colorize('🔐 Setting up SSH agent...', colors.blue))
   const sshAgentOutput = exec('ssh-agent', ['-s'])
-  const match = sshAgentOutput.match(/SSH_AUTH_SOCK=([^;]+).*SSH_AGENT_PID=(\d+)/s)
+  const match = sshAgentOutput.match(/SSH_AUTH_SOCK=(?<SSH_AUTH_SOCK>[^;]+).*SSH_AGENT_PID=(?<SSH_AGENT_PID>\d+)/s)
   if ( ! match ) {
     throw new Error('Failed to start SSH agent')
   }
-  process.env.SSH_AUTH_SOCK = match[1]
-  process.env.SSH_AGENT_PID = match[2]
+  Object.assign(process.env, match.groups)
 
   if ( sourceSshKey ) {
     log(colorize('🔑 Adding source SSH key...', colors.yellow))
@@ -169,7 +168,10 @@ function setupSSHAgent(sourceSshKey, targetSshKey) {
 // New function to stop SSH agent
 function stopSSHAgent() {
   log(colorize('🔒 Stopping SSH agent...', colors.blue))
-  exec('ssh-agent', ['-k'])
+  exec('ssh-agent', [
+    '-s', // Generate Bourne shell commands on stdout.
+    '-k', // Kill the current agent.
+  ])
 }
 
 
