@@ -22,7 +22,11 @@ jobs:
   
     environment:
       name: "${{ format('mirror--{0}', fromJSON(matrix['json'])['name']) }}"
-      url:  "${{ format('https://github.com/{0}/{1}', github.repository_owner, fromJSON(matrix['json'])['name']) }}"
+      url:  >
+        ${{ format('https://github.com/{0}/{1}',
+              github.repository_owner,
+              fromJSON(matrix['json'])['name'],
+        )}}
 
     runs-on: 'ubuntu-latest'
     steps:
@@ -32,7 +36,10 @@ jobs:
         with:
           'source-repo':    ${{ vars['SOURCE_REPO'] }}
           'target-repo':    ${{ vars['TARGET_REPO'] }}
+          'branch':         ${{ vars['BRANCH'] }}
+          'source-ssh-key': ${{ secrets['SOURCE_SSH_KEY'] }}
           'target-ssh-key': ${{ secrets['TARGET_SSH_KEY'] }}
+          'target-token':   ${{ secrets['TARGET_TOKEN'] }}
 
       - name: "Log mirroring results"
         run: |
