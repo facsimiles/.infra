@@ -180,8 +180,8 @@ async function main() {
         fs.appendFileSync(sshConfigPath, `IdentityFile ${sshTargetKeyPath}\n`)
       }
 
-      const output = exec('ssh-keyscan', ['-H', 'github.com'], {stdio: ['ignore', 'pipe', 'pipe']})
-      fs.appendFileSync(sshKnownHostsPath, output)
+      // const output = exec('ssh-keyscan', ['-H', 'github.com'], {stdio: ['ignore', 'pipe', 'pipe']})
+      // fs.appendFileSync(sshKnownHostsPath, output)
     }
 
     // Clone source repository
@@ -198,19 +198,19 @@ async function main() {
     }
 
     // Mirror repository
-    log(colorize('🔄 Mirroring repository...', colors.green))
+    log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
     withCwd(clonedRepoPath, async () => {
       exec('git', ['push', '--verbose', '--mirror', targetRepoUrl])
   
       // Get mirrored branches
-      const branches = exec('git', ['branch', '-r']).split('\n')
-        .map(branch => branch.trim().replace('origin/', ''))
-        .filter(Boolean)
-      setOutput('mirrored-branches', JSON.stringify(branches))
+      // const branches = exec('git', ['branch', '-r']).split('\n')
+      //   .map(branch => branch.trim().replace('origin/', ''))
+      //   .filter(Boolean)
+      // setOutput('mirrored-branches', JSON.stringify(branches))
   
       // Get last commit hash
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
-      setOutput('last-commit-hash', lastCommitHash)
+      setOutput('head-commit-hash', lastCommitHash)
     })
     log(colorize('✅ Repository mirrored successfully!', colors.green))
   } catch (error) {
