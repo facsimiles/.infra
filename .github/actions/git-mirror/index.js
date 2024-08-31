@@ -39,10 +39,10 @@ const colors = {
   brightWhite: '\x1b[97m',
 
   // 24-bit Colors (Foreground)
-  fgColor: (r, g, b) => `\x1b[38;2;${r};${g};${b}m`,
+  rgb: (r, g, b) => `\x1b[38;2;${r};${g};${b}m`,
 
   // 24-bit Colors (Background)
-  bgColor: (r, g, b) => `\x1b[48;2;${r};${g};${b}m`,
+  rgbBg: (r, g, b) => `\x1b[48;2;${r};${g};${b}m`,
 }
 
 // Class to handle inputs using Proxy
@@ -62,13 +62,13 @@ const START_TIME = Date.now();
 
 // Logging function with colors and emojis
 function log(message, color = 'reset', emoji = '') {
-  const elapsed = Date.now() - START_TIME;
-  const seconds = Math.floor(elapsed / 1000).toString().padStart(3, '0');
-  const milliseconds = (elapsed % 1000).toString().padStart(3, '0');
+  const elapsed = Date.now() - START_TIME
+  const seconds = Math.floor(elapsed / 1000).toString().padStart(3, `${colors.rgb(30, 30, 30)}0${colors.reset}`)
+  const milliseconds = (elapsed % 1000).toString().padStart(3, `${colors.rgb(30, 30, 30)}0${colors.reset}`)
   
-  const elapsedStr = `${colors.dim}[${colors.reset}${colors.green}+${colors.reset}${colors.yellow}${seconds}${colors.reset}${colors.green}.${colors.reset}${colors.cyan}${milliseconds}${colors.reset}${colors.dim}ms]${colors.reset}`;
+  const elapsedStr = `${colors.dim}[${colors.reset}${colors.green}+${colors.reset}${colors.yellow}${seconds}${colors.reset}${colors.green}.${colors.reset}${colors.cyan}${milliseconds}${colors.reset}${colors.dim}ms]${colors.reset}`
   
-  console.log(`${elapsedStr} ${colors[color]}${emoji} ${message}${colors.reset}`);
+  console.log(`${elapsedStr} ${colors[color]}${emoji} ${message}${colors.reset}`)
 }
 
 function prettyPrintEnv(filterCallback) {
