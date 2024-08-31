@@ -43,23 +43,30 @@ function log(message, color = 'reset', emoji = '') {
   console.log(`${colors.cyan}${elapsedStr}${colors.reset} ${colors[color]}${emoji} ${message}${colors.reset}`)
 }
 
-function prettyPrintEnv() {
+function prettyPrintEnv(filterCallback) {
   console.log(
     `${colors.bold}${colors.underline}${colors.blue}` +
     `Environment Variables:` +
     `${colors.reset}`
-  );
-  for (const [key, value] of Object.entries(process.env)) {
-    let displayValue = value;
-    if (value.length > 255 || value.includes('\n')) {
-      displayValue = value.slice(0, 252) + '...';
+  )
+
+  for (const [name, value] of Object.entries(process.env)) {
+    if (filterCallback && ! filterCallback(name, value)) {
+      continue
     }
+
+    let displayValue = value
+    if (value.length > 255 || value.includes('\n')) {
+      displayValue = value.slice(0, 252) + '...'
+    }
+
     console.log(
-      `  ${colors.green}${key}${colors.reset}: ` +
+      `  ${colors.green}${name}${colors.reset}: ` +
       `${colors.yellow}${displayValue}${colors.reset}`
-    );
+    )
   }
 }
+
 
 // Function to execute shell commands
 function exec(command, args, options = {}) {
@@ -84,23 +91,33 @@ function setOutput(name, value) {
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}<<${uuid}\n${value}\n${uuid}\n`)
 }
 
+async function withCwd(directory, callback) {
+    const __originalCwd = process.cwd()
+    try {
+        process.chdir(directory)
+        await callback()
+    } finally {
+        process.chdir(__originalCwd)
+    }
+}
+
 
 // Main function
 async function main() {
-  const sshDir = path.join(process.env.HOME, '.ssh')
+  const sshDir = path.join(os.homedir(), '.ssh')
   const sshSourceKeyPath  = path.join(sshDir, 'source_key')
   const sshTargetKeyPath  = path.join(sshDir, 'target_key')
   const sshConfigPath     = path.join(sshDir, 'config')
   const sshKnownHostsPath = path.join(sshDir, 'known_hosts')
 
-  const sourceRepoDir = 'source_repo'
-  const sourceRepoPath = path.join(process.cwd(), sourceRepoDir)
+  const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), 'cloned-repo.'))
 
   try {
     // Input validation
     const requiredInputs = ['source-repo', 'target-repo']
     for (const input of requiredInputs) {
       if (!inputs[input]) {
+        prettyPrintEnv((name, value) => name.startsWith('INPUT_'))
         throw new Error(`Missing required input: ${input}`)
       }
     }
@@ -130,8 +147,7 @@ async function main() {
 
     // Clone source repository
     log('Cloning source repository...', 'cyan', '📥')
-    exec('git', ['clone', '--mirror', inputs['source-repo'], sourceRepoPath])
-    setOutput('source-repo-path', sourceRepoPath)
+    exec('git', ['clone', '--mirror', inputs['source-repo'], clonedRepoPath])
 
     // Set up target repository URL
     let targetRepoUrl;
@@ -141,23 +157,22 @@ async function main() {
       const repoPath = inputs['target-repo'].replace('https://github.com/', '')
       targetRepoUrl = `https://x-access-token:${inputs['target-token']}@github.com/${repoPath}`
     }
-    setOutput('target-repo-path', targetRepoUrl)
 
     // Mirror repository
     log('Mirroring repository...', 'green', '🔄')
-    process.chdir(sourceRepoPath)
-    exec('git', ['push', '--mirror', targetRepoUrl])
-
-    // Get mirrored branches
-    const branches = exec('git', ['branch', '-r']).split('\n')
-      .map(branch => branch.trim().replace('origin/', ''))
-      .filter(Boolean)
-    setOutput('mirrored-branches', branches.join(','))
-
-    // Get last commit hash
-    const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
-    setOutput('last-commit-hash', lastCommitHash)
-
+    withCwd(clonedRepoPath, async () => {
+      exec('git', ['push', '--verbose', '--mirror', targetRepoUrl])
+  
+      // Get mirrored branches
+      const branches = exec('git', ['branch', '-r']).split('\n')
+        .map(branch => branch.trim().replace('origin/', ''))
+        .filter(Boolean)
+      setOutput('mirrored-branches', JSON.stringify(branches))
+  
+      // Get last commit hash
+      const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
+      setOutput('last-commit-hash', lastCommitHash)
+    })
     log('Repository mirrored successfully!', 'green', '✅')
   } catch (error) {
     log(error.message, 'red', '❌')
@@ -167,7 +182,7 @@ async function main() {
     log('Cleaning up...', 'yellow', '🧹');
     fs.rmSync(sshSourceKeyPath, { force: true })
     fs.rmSync(sshTargetKeyPath, { force: true })
-    fs.rmSync(sourceRepoPath, { recursive: true, force: true })
+    fs.rmSync(clonedRepoPath, { recursive: true, force: true })
   }
 }
 
