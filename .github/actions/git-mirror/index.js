@@ -18,6 +18,18 @@ const colors = {
   cyan: '\x1b[36m',
 }
 
+// Class to handle inputs using Proxy
+class Inputs {
+  constructor() {
+    return new Proxy(this, {
+      get: (target, prop) => process.env[`INPUT_${prop.toUpperCase()}`]
+    });
+  }
+}
+
+// Instantiate Inputs class
+const inputs = new Inputs();
+
 // Function to get the elapsed time since the start of the script
 const START_TIME = Date.now();
 
@@ -49,7 +61,6 @@ function prettyPrintEnv() {
   }
 }
 
-
 // Function to execute shell commands
 function exec(command, args) {
   const cmd_str = [command, ...args].map(arg => `\`${arg}\``).join(' ')
@@ -69,17 +80,6 @@ function setOutput(name, value) {
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}<<${uuid}\n${value}\n${uuid}\n`);
 }
 
-// Class to handle inputs using Proxy
-class Inputs {
-  constructor() {
-    return new Proxy(this, {
-      get: (target, prop) => process.env[`INPUT_${prop.toUpperCase()}`]
-    });
-  }
-}
-
-// Instantiate Inputs class
-const inputs = new Inputs();
 
 // Main function
 async function main() {
@@ -167,4 +167,4 @@ async function main() {
   }
 }
 
-main();
+main()
