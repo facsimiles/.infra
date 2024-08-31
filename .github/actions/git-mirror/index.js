@@ -83,8 +83,15 @@ const inputs = new Inputs();
 
 // Main function
 async function main() {
-  // prettyPrintEnv()
-  
+  // Define constant paths
+  const sshDir = path.join(process.env.HOME, '.ssh');
+  const sourceKeyPath = path.join(sshDir, 'source_key');
+  const targetKeyPath = path.join(sshDir, 'target_key');
+  const sshConfigPath = path.join(sshDir, 'config');
+  const knownHostsPath = path.join(sshDir, 'known_hosts');
+  const sourceRepoDir = 'source_repo';
+  const sourceRepoPath = path.join(process.cwd(), sourceRepoDir);
+
   try {
     // Input validation
     const requiredInputs = ['source-repo', 'target-repo'];
@@ -101,26 +108,24 @@ async function main() {
     // Set up SSH keys if provided
     if (inputs['source-ssh-key'] || inputs['target-ssh-key']) {
       log('Setting up SSH keys...', 'blue', '🔑');
-      const sshDir = path.join(process.env.HOME, '.ssh');
       fs.mkdirSync(sshDir, { recursive: true });
 
       if (inputs['source-ssh-key']) {
-        fs.writeFileSync(path.join(sshDir, 'source_key'), inputs['source-ssh-key'], { mode: 0o600 });
-        fs.appendFileSync(path.join(sshDir, 'config'), 'IdentityFile ~/.ssh/source_key\n');
+        fs.writeFileSync(sourceKeyPath, inputs['source-ssh-key'], { mode: 0o600 });
+        fs.appendFileSync(sshConfigPath, 'IdentityFile ~/.ssh/source_key\n');
       }
 
       if (inputs['target-ssh-key']) {
-        fs.writeFileSync(path.join(sshDir, 'target_key'), inputs['target-ssh-key'], { mode: 0o600 });
-        fs.appendFileSync(path.join(sshDir, 'config'), 'IdentityFile ~/.ssh/target_key\n');
+        fs.writeFileSync(targetKeyPath, inputs['target-ssh-key'], { mode: 0o600 });
+        fs.appendFileSync(sshConfigPath, 'IdentityFile ~/.ssh/target_key\n');
       }
 
-      exec('ssh-keyscan', ['-H', 'github.com', '>>', '~/.ssh/known_hosts']);
+      exec('ssh-keyscan', ['-H', 'github.com', '>>', knownHostsPath]);
     }
 
     // Clone source repository
     log('Cloning source repository...', 'cyan', '📥');
-    exec('git', ['clone', '--mirror', inputs['source-repo'], 'source_repo']);
-    const sourceRepoPath = path.join(process.cwd(), 'source_repo');
+    exec('git', ['clone', '--mirror', inputs['source-repo'], sourceRepoDir]);
     setOutput('source-repo-path', sourceRepoPath);
 
     // Set up target repository URL
@@ -155,9 +160,9 @@ async function main() {
   } finally {
     // Clean up
     log('Cleaning up...', 'yellow', '🧹');
-    fs.rmSync(path.join(process.env.HOME, '.ssh', 'source_key'), { force: true });
-    fs.rmSync(path.join(process.env.HOME, '.ssh', 'target_key'), { force: true });
-    fs.rmSync(path.join(process.cwd(), 'source_repo'), { recursive: true, force: true });
+    fs.rmSync(sourceKeyPath, { force: true });
+    fs.rmSync(targetKeyPath, { force: true });
+    fs.rmSync(sourceRepoPath, { recursive: true, force: true });
   }
 }
 
