@@ -63,7 +63,7 @@ const START_TIME = Date.now();
 // Logging function with colors and emojis
 function log(message, color = 'reset', emoji = '') {
   const elapsed = Date.now() - START_TIME
-  const colorizedZeroPad = (str, len) => str.padStart(len, '@').replace('@', `${colors.rgb(30, 30, 30)}0${colors.reset}`)
+  const colorizedZeroPad = (str, len) => str.padStart(len, '@').replace(/@/g, `${colors.rgb(60, 60, 60)}0${colors.reset}`)
   const seconds = colorizedZeroPad(Math.floor(elapsed / 1000).toString(), 3)
   const milliseconds = colorizedZeroPad((elapsed % 1000).toString(), 3)
   
