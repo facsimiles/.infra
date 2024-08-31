@@ -149,13 +149,15 @@ async function withCwd(directory, callback) {
 // New function to start SSH agent and add keys
 function setupSSHAgent(sourceSshKey, targetSshKey) {
   log(colorize('🔐 Setting up SSH agent...', colors.blue))
-  const sshAgentOutput = exec('ssh-agent', ['-s'])
-  const match = sshAgentOutput.match(/SSH_AUTH_SOCK=(?<SSH_AUTH_SOCK>[^;]+).*SSH_AGENT_PID=(?<SSH_AGENT_PID>\d+)/s)
+  const sshAgentOutput = exec('ssh-agent', [
+    '-s', // Generate Bourne shell commands on stdout.
+  ])
+  const match = sshAgentOutput.match(
+    /SSH_AUTH_SOCK=(?<SSH_AUTH_SOCK>[^;]+).*SSH_AGENT_PID=(?<SSH_AGENT_PID>\d+)/s
+  )
   if ( ! match ) {
     throw new Error('Failed to start SSH agent')
   }
-  console.log(`match.groups:`)
-  console.log(match.groups)
   Object.assign(process.env, match.groups)
 
   if ( sourceSshKey ) {
@@ -172,7 +174,6 @@ function setupSSHAgent(sourceSshKey, targetSshKey) {
 function stopSSHAgent() {
   log(colorize('🔒 Stopping SSH agent...', colors.blue))
   exec('ssh-agent', [
-    '-s', // Generate Bourne shell commands on stdout.
     '-k', // Kill the current agent.
   ])
 }
@@ -214,6 +215,7 @@ async function main() {
       setupSSHAgent(inputs['source-ssh-key'], inputs['target-ssh-key'])
       delete inputs['source-ssh-key']
       delete inputs['target-ssh-key']
+      prettyPrintEnv((name, value) => name.startsWith('INPUT_'))
       fs.mkdirSync(sshDir, { recursive: true })
       fs.appendFileSync(sshConfigPath, 'StrictHostKeyChecking=no\n')
     }
