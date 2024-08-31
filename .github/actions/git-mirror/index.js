@@ -38,7 +38,7 @@ const colors = {
   brightWhite: '\x1b[97m',
 
   // 24-bit Colors (Foreground)
-  rgb: (r, g, b) => `\x1b[38;2;${r};${g};${b}m`,
+  rgb: (r, g = r, b = r) => `\x1b[38;2;${r};${g};${b}m`,
 
   // 24-bit Colors (Background)
   rgbBg: (r, g, b) => `\x1b[48;2;${r};${g};${b}m`,
@@ -50,10 +50,21 @@ function colorize(str, color) {
 
 // Class to handle inputs using Proxy
 class Inputs {
+  #toEnvVarName(prop) {
+    return `INPUT_${prop.toUpperCase()}`
+  }
   constructor() {
     return new Proxy(this, {
-      get: (target, prop) => process.env[`INPUT_${prop.toUpperCase()}`]
-    });
+      get: (target, prop) => process.env[this.#toEnvVarName(prop)],
+      deleteProperty: (target, prop) => {
+        const envVarName = this.#toEnvVarName(prop)
+        if (envVarName in process.env) {
+          delete process.env[envVarName]
+          return true
+        }
+        return false
+      }
+    })
   }
 }
 
@@ -106,19 +117,16 @@ function prettyPrintEnv(filterCallback) {
 
 // Function to execute shell commands
 function exec(command, args, options = {}) {
-  const cmd_str = [command, ...args].map(arg => `\`${arg}\``).join(' ')
-  try {
-    console.log(`::debug::Executing command: ${cmd_str}`)
-    return execFileSync(command, args, {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'inherit'],
-      ...options
-    })
-  } catch (error) {
-    log(colorize(`❌ Error executing command: ${cmd_str}`, colors.red))
-    log(colorize(error.message, colors.red))
-    throw error
-  }
+  const backtick = colorize('`', color.rgb(100, 100, 100))
+  const cmd_str = [command, ...args].map(arg =>
+    backtick + colorize(str, colors.rgb(200, 200, 200)) + backtick
+  ).join(' ')
+  log(colorize(`🚀 Executing command: `, colors.magenta) + cmd_str)
+  return execFileSync(command, args, {
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', 'inherit'],
+    ...options
+  })
 }
 
 // Function to set output for GitHub Actions
@@ -142,15 +150,19 @@ function setupSSHAgent(sourceSshKey, targetSshKey) {
   log(colorize('🔐 Setting up SSH agent...', colors.blue))
   const sshAgentOutput = exec('ssh-agent', ['-s'])
   const match = sshAgentOutput.match(/SSH_AUTH_SOCK=([^;]+).*SSH_AGENT_PID=(\d+)/s)
-  if (!match) {
+  if ( ! match ) {
     throw new Error('Failed to start SSH agent')
   }
   process.env.SSH_AUTH_SOCK = match[1]
   process.env.SSH_AGENT_PID = match[2]
 
-  for (key of [sourceSshKey, targetSshKey]) {
-    if ( ! key ) continue
-    execFileSync('ssh-add', ['-'], { input: key })
+  if ( sourceSshKey ) {
+    log(colorize('🔑 Adding source SSH key...', colors.yellow))
+    execFileSync('ssh-add', ['-vvv', '-'], { input: sourceSshKey })
+  }
+  if ( targetSshKey ) {
+    log(colorize('🔑 Adding target SSH key...', colors.yellow))
+    execFileSync('ssh-add', ['-vvv', '-'], { input: targetSshKey })
   }
 }
 
@@ -170,6 +182,7 @@ async function main() {
   const sshKnownHostsPath = path.join(sshDir, 'known_hosts')
 
   const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), 'cloned-repo-'))
+  fs.chmodSync(clonedRepoPath, 0o700)
 
   let usingSsh = false
 
@@ -191,7 +204,8 @@ async function main() {
     if ( inputs['source-ssh-key'] || inputs['target-ssh-key'] ) {
       usingSsh = true
       setupSSHAgent(inputs['source-ssh-key'], inputs['target-ssh-key'])
-      // TODO: delete the env vars with keys
+      delete inputs['source-ssh-key']
+      delete inputs['target-ssh-key']
       fs.mkdirSync(sshDir, { recursive: true })
       fs.appendFileSync(sshConfigPath, 'StrictHostKeyChecking=no\n')
     }
