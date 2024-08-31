@@ -18,6 +18,19 @@ const colors = {
   cyan: '\x1b[36m',
 }
 
+// Function to get the elapsed time since the start of the script
+const START_TIME = Date.now();
+
+// Logging function with colors and emojis
+function log(message, color = 'reset', emoji = '') {
+  const elapsed = Date.now() - START_TIME
+  const seconds = Math.floor(elapsed / 1000)
+  const milliseconds = elapsed % 1000
+  const elapsedStr =`[+${seconds}.${milliseconds}ms]`
+  
+  console.log(`${colors.cyan}${elapsedStr}${colors.reset} ${colors[color]}${emoji} ${message}${colors.reset}`);
+}
+
 function prettyPrintEnv() {
   console.log(
     `${colors.bold}${colors.underline}${colors.blue}` +
@@ -36,10 +49,6 @@ function prettyPrintEnv() {
   }
 }
 
-// Logging function with colors and emojis
-function log(message, color = 'reset', emoji = '') {
-  console.log(`${colors[color]}${emoji} ${message}${colors.reset}`);
-}
 
 // Function to execute shell commands
 function exec(command, args) {
