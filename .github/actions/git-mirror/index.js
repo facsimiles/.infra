@@ -127,8 +127,6 @@ function exec(command, args, options = {}) {
     stdio: ['pipe', 'pipe', 'inherit'],
     ...options
   })
-  process.stdout.flush()
-  process.stderr.flush()
   return output
 }
 
@@ -156,6 +154,8 @@ function setupSSHAgent(sourceSshKey, targetSshKey) {
   if ( ! match ) {
     throw new Error('Failed to start SSH agent')
   }
+  console.log(`match.groups:`)
+  console.log(match.groups)
   Object.assign(process.env, match.groups)
 
   if ( sourceSshKey ) {
@@ -180,6 +180,9 @@ function stopSSHAgent() {
 
 // Main function
 async function main() {
+  process.stdout._handle.setBlocking(true)
+  process.stderr._handle.setBlocking(true)
+  
   const inputs = new Inputs()
   
   const sshDir = path.join(os.homedir(), '.ssh')
