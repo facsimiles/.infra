@@ -57,9 +57,6 @@ class Inputs {
   }
 }
 
-// Instantiate Inputs class
-const inputs = new Inputs();
-
 // Function to get the elapsed time since the start of the script
 const START_TIME = Date.now();
 
@@ -114,11 +111,11 @@ function exec(command, args, options = {}) {
     console.log(`::debug::Executing command: ${cmd_str}`)
     return execFileSync(command, args, {
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'inherit'],
+      stdio: ['pipe', 'pipe', 'inherit'],
       ...options
     })
   } catch (error) {
-    log(colorize(`Error executing command: ${cmd_str} ❌`, colors.red))
+    log(colorize(`❌ Error executing command: ${cmd_str}`, colors.red))
     log(colorize(error.message, colors.red))
     throw error
   }
@@ -140,16 +137,40 @@ async function withCwd(directory, callback) {
     }
 }
 
+// New function to start SSH agent and add keys
+function setupSSHAgent(sourceSshKey, targetSshKey) {
+  log(colorize('🔐 Setting up SSH agent...', colors.blue))
+  const sshAgentOutput = exec('ssh-agent', ['-s'])
+  const match = sshAgentOutput.match(/SSH_AUTH_SOCK=([^;]+).*SSH_AGENT_PID=(\d+)/s)
+  if (!match) {
+    throw new Error('Failed to start SSH agent')
+  }
+  process.env.SSH_AUTH_SOCK = match[1]
+  process.env.SSH_AGENT_PID = match[2]
+
+  for (key of [sourceSshKey, targetSshKey]) {
+    if ( ! key ) continue
+    execFileSync('ssh-add', ['-'], { input: key })
+  }
+}
+
+// New function to stop SSH agent
+function stopSSHAgent() {
+  log(colorize('🔒 Stopping SSH agent...', colors.blue))
+  exec('ssh-agent', ['-k'])
+}
+
 
 // Main function
 async function main() {
+  // Instantiate Inputs class
+  const inputs = new Inputs()
+  
   const sshDir = path.join(os.homedir(), '.ssh')
-  const sshSourceKeyPath  = path.join(sshDir, 'source_key')
-  const sshTargetKeyPath  = path.join(sshDir, 'target_key')
-  const sshConfigPath     = path.join(sshDir, 'config')
+  const sshConfigPath = path.join(sshDir, 'config')
   const sshKnownHostsPath = path.join(sshDir, 'known_hosts')
 
-  const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), 'cloned-repo.'))
+  const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), 'cloned-repo-'))
 
   try {
     // Input validation
@@ -165,23 +186,11 @@ async function main() {
       throw new Error('Either target-ssh-key or target-token must be provided')
     }
 
-    // Set up SSH keys if provided
+    // Set up SSH agent if SSH keys are provided
     if (inputs['source-ssh-key'] || inputs['target-ssh-key']) {
-      log(colorize('🔑 Setting up SSH keys...', colors.blue))
+      setupSSHAgent()
       fs.mkdirSync(sshDir, { recursive: true })
-
-      if (inputs['source-ssh-key']) {
-        fs.writeFileSync(sshSourceKeyPath, inputs['source-ssh-key'], { mode: 0o600 })
-        fs.appendFileSync(sshConfigPath, `IdentityFile ${sshSourceKeyPath}\n`)
-      }
-
-      if (inputs['target-ssh-key']) {
-        fs.writeFileSync(sshTargetKeyPath, inputs['target-ssh-key'], { mode: 0o600 })
-        fs.appendFileSync(sshConfigPath, `IdentityFile ${sshTargetKeyPath}\n`)
-      }
-
-      // const output = exec('ssh-keyscan', ['-H', 'github.com'], {stdio: ['ignore', 'pipe', 'pipe']})
-      // fs.appendFileSync(sshKnownHostsPath, output)
+      fs.appendFileSync(sshConfigPath, 'StrictHostKeyChecking=no\n')
     }
 
     // Clone source repository
@@ -189,25 +198,17 @@ async function main() {
     exec('git', ['clone', '--verbose', '--mirror', inputs['source-repo'], clonedRepoPath])
 
     // Set up target repository URL
-    let targetRepoUrl;
-    if (inputs['target-ssh-key']) {
-      targetRepoUrl = inputs['target-repo']
-    } else {
+    let targetRepoUrl = inputs['target-repo']
+    if (inputs['target-token']) {
       const repoPath = inputs['target-repo'].replace('https://github.com/', '')
       targetRepoUrl = `https://x-access-token:${inputs['target-token']}@github.com/${repoPath}`
     }
 
     // Mirror repository
     log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
-    withCwd(clonedRepoPath, async () => {
+    await withCwd(clonedRepoPath, async () => {
       exec('git', ['push', '--verbose', '--mirror', targetRepoUrl])
-  
-      // Get mirrored branches
-      // const branches = exec('git', ['branch', '-r']).split('\n')
-      //   .map(branch => branch.trim().replace('origin/', ''))
-      //   .filter(Boolean)
-      // setOutput('mirrored-branches', JSON.stringify(branches))
-  
+
       // Get last commit hash
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
       setOutput('head-commit-hash', lastCommitHash)
@@ -219,8 +220,9 @@ async function main() {
   } finally {
     // Clean up
     log(colorize('🧹 Cleaning up...', colors.yellow));
-    fs.rmSync(sshSourceKeyPath, { force: true })
-    fs.rmSync(sshTargetKeyPath, { force: true })
+    if (inputs['source-ssh-key'] || inputs['target-ssh-key']) {
+      stopSSHAgent()
+    }
     fs.rmSync(clonedRepoPath, { recursive: true, force: true })
   }
 }
