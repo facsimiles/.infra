@@ -62,62 +62,66 @@ function prettyPrintEnv() {
 }
 
 // Function to execute shell commands
-function exec(command, args) {
+function exec(command, args, options = {}) {
   const cmd_str = [command, ...args].map(arg => `\`${arg}\``).join(' ')
   try {
     console.log(`::debug::Executing command: ${cmd_str}`)
-    return execFileSync(command, args, { encoding: 'utf8', stdio: 'pipe' })
+    return execFileSync(command, args, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'inherit'],
+      ...options
+    })
   } catch (error) {
     log(`Error executing command: ${cmd_str}`, 'red', '❌')
     log(error.message, 'red')
-    process.exit(1)
+    throw error
   }
 }
 
 // Function to set output for GitHub Actions
 function setOutput(name, value) {
-  const uuid = crypto.randomUUID();
-  fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}<<${uuid}\n${value}\n${uuid}\n`);
+  const uuid = crypto.randomUUID()
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}<<${uuid}\n${value}\n${uuid}\n`)
 }
 
 
 // Main function
 async function main() {
-  const sshDir = path.join(process.env.HOME, '.ssh');
-  const sshSourceKeyPath  = path.join(sshDir, 'source_key');
-  const sshTargetKeyPath  = path.join(sshDir, 'target_key');
-  const sshConfigPath     = path.join(sshDir, 'config');
-  const sshKnownHostsPath = path.join(sshDir, 'known_hosts');
+  const sshDir = path.join(process.env.HOME, '.ssh')
+  const sshSourceKeyPath  = path.join(sshDir, 'source_key')
+  const sshTargetKeyPath  = path.join(sshDir, 'target_key')
+  const sshConfigPath     = path.join(sshDir, 'config')
+  const sshKnownHostsPath = path.join(sshDir, 'known_hosts')
 
-  const sourceRepoDir = 'source_repo';
-  const sourceRepoPath = path.join(process.cwd(), sourceRepoDir);
+  const sourceRepoDir = 'source_repo'
+  const sourceRepoPath = path.join(process.cwd(), sourceRepoDir)
 
   try {
     // Input validation
-    const requiredInputs = ['source-repo', 'target-repo'];
+    const requiredInputs = ['source-repo', 'target-repo']
     for (const input of requiredInputs) {
       if (!inputs[input]) {
-        throw new Error(`Missing required input: ${input}`);
+        throw new Error(`Missing required input: ${input}`)
       }
     }
 
     if (!inputs['target-ssh-key'] && !inputs['target-token']) {
-      throw new Error('Either target-ssh-key or target-token must be provided');
+      throw new Error('Either target-ssh-key or target-token must be provided')
     }
 
     // Set up SSH keys if provided
     if (inputs['source-ssh-key'] || inputs['target-ssh-key']) {
-      log('Setting up SSH keys...', 'blue', '🔑');
-      fs.mkdirSync(sshDir, { recursive: true });
+      log('Setting up SSH keys...', 'blue', '🔑')
+      fs.mkdirSync(sshDir, { recursive: true })
 
       if (inputs['source-ssh-key']) {
-        fs.writeFileSync(sshSourceKeyPath, inputs['source-ssh-key'], { mode: 0o600 });
-        fs.appendFileSync(sshConfigPath, `IdentityFile ${sshSourceKeyPath}\n`);
+        fs.writeFileSync(sshSourceKeyPath, inputs['source-ssh-key'], { mode: 0o600 })
+        fs.appendFileSync(sshConfigPath, `IdentityFile ${sshSourceKeyPath}\n`)
       }
 
       if (inputs['target-ssh-key']) {
-        fs.writeFileSync(sshTargetKeyPath, inputs['target-ssh-key'], { mode: 0o600 });
-        fs.appendFileSync(sshConfigPath, `IdentityFile ${sshTargetKeyPath}\n`);
+        fs.writeFileSync(sshTargetKeyPath, inputs['target-ssh-key'], { mode: 0o600 })
+        fs.appendFileSync(sshConfigPath, `IdentityFile ${sshTargetKeyPath}\n`)
       }
 
       const output = exec('ssh-keyscan', ['-H', 'github.com'])
@@ -132,38 +136,38 @@ async function main() {
     // Set up target repository URL
     let targetRepoUrl;
     if (inputs['target-ssh-key']) {
-      targetRepoUrl = inputs['target-repo'];
+      targetRepoUrl = inputs['target-repo']
     } else {
-      const repoPath = inputs['target-repo'].replace('https://github.com/', '');
-      targetRepoUrl = `https://x-access-token:${inputs['target-token']}@github.com/${repoPath}`;
+      const repoPath = inputs['target-repo'].replace('https://github.com/', '')
+      targetRepoUrl = `https://x-access-token:${inputs['target-token']}@github.com/${repoPath}`
     }
-    setOutput('target-repo-path', targetRepoUrl);
+    setOutput('target-repo-path', targetRepoUrl)
 
     // Mirror repository
-    log('Mirroring repository...', 'green', '🔄');
-    process.chdir(sourceRepoPath);
-    exec('git', ['push', '--mirror', targetRepoUrl]);
+    log('Mirroring repository...', 'green', '🔄')
+    process.chdir(sourceRepoPath)
+    exec('git', ['push', '--mirror', targetRepoUrl])
 
     // Get mirrored branches
     const branches = exec('git', ['branch', '-r']).split('\n')
       .map(branch => branch.trim().replace('origin/', ''))
-      .filter(Boolean);
-    setOutput('mirrored-branches', branches.join(','));
+      .filter(Boolean)
+    setOutput('mirrored-branches', branches.join(','))
 
     // Get last commit hash
-    const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim();
-    setOutput('last-commit-hash', lastCommitHash);
+    const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
+    setOutput('last-commit-hash', lastCommitHash)
 
-    log('Repository mirrored successfully!', 'green', '✅');
+    log('Repository mirrored successfully!', 'green', '✅')
   } catch (error) {
-    log(error.message, 'red', '❌');
-    process.exit(1);
+    log(error.message, 'red', '❌')
+    process.exit(1)
   } finally {
     // Clean up
     log('Cleaning up...', 'yellow', '🧹');
-    fs.rmSync(sshSourceKeyPath, { force: true });
-    fs.rmSync(sshTargetKeyPath, { force: true });
-    fs.rmSync(sourceRepoPath, { recursive: true, force: true });
+    fs.rmSync(sshSourceKeyPath, { force: true })
+    fs.rmSync(sshTargetKeyPath, { force: true })
+    fs.rmSync(sourceRepoPath, { recursive: true, force: true })
   }
 }
 
