@@ -1,7 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-const { execFileSync } = require('child_process');
-const crypto = require('crypto');
+const crypto = require('crypto')
+const fs     = require('fs')
+const os     = require('os')
+const path   = require('path')
+const { execFileSync } = require('child_process')
 
 // ANSI color codes
 const colors = {
