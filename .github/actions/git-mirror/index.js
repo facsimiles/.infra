@@ -44,6 +44,10 @@ const colors = {
   rgbBg: (r, g, b) => `\x1b[48;2;${r};${g};${b}m`,
 }
 
+function colorize(str, color) {
+  return `${color}${str}${colors.reset}`
+}
+
 // Class to handle inputs using Proxy
 class Inputs {
   constructor() {
@@ -60,26 +64,30 @@ const inputs = new Inputs();
 const START_TIME = Date.now();
 
 // Logging function with colors and emojis
-function log(message, color = 'reset', emoji = '') {
+function log(message) {
   function formatNum(prefix, num, suffix, len) {
-    const str = num.toString()
-    return `${colors.rgb(60, 60, 60)}0${colors.reset}`.repeat(len-str.length) + prefix + str + suffix
+    const str = num ? num.toString() : ''
+    return colorize("0", colors.rgb(60, 60, 60)).repeat(len - str.length) + prefix + str + suffix
   }
   const elapsed = Date.now() - START_TIME
-  const seconds = formatNum(colors.rgb(110, 90, 220), Math.floor(elapsed / 1000), colors.reset, 3)
-  const milliseconds = formatNum(colors.rgb(80, 130, 255), elapsed % 1000, colors.reset, 3)
+  const seconds = formatNum(colors.rgb(130, 100, 220), Math.floor(elapsed / 1000), colors.reset, 3)
+  const milliseconds = formatNum(colors.rgb(100, 130, 255), elapsed % 1000, colors.reset, 3)
   
-  const elapsedStr = `${colors.rgb(170, 170, 170)}[${colors.reset}${colors.blue}+${colors.reset}${seconds}${colors.blue}.${colors.reset}${milliseconds}${colors.rgb(130, 130, 130)}ms${colors.reset}${colors.rgb(170, 170, 170)}]${colors.reset}`
-  
-  console.log(`${elapsedStr} ${colors[color]}${emoji} ${message}${colors.reset}`)
+  const elapsedStr = [
+    colorize("[", colors.rgb(170, 170, 170)),
+    colorize("+", colors.blue),
+    `${seconds}`,
+    colorize(".", colors.blue),
+    `${milliseconds}`,
+    colorize("ms", colors.rgb(130, 130, 130)),
+    colorize("]", colors.rgb(170, 170, 170)),
+  ].join('')
+
+  console.log(`${elapsedStr} ${colorize(message, colors.reset)}`)
 }
 
 function prettyPrintEnv(filterCallback) {
-  console.log(
-    `${colors.bold}${colors.underline}${colors.blue}` +
-    `Environment Variables:` +
-    `${colors.reset}`
-  )
+  console.log(colorize("Environment Variables:", `${colors.bold}${colors.underline}${colors.blue}`))
 
   for (const [name, value] of Object.entries(process.env)) {
     if (filterCallback && ! filterCallback(name, value)) {
@@ -92,8 +100,8 @@ function prettyPrintEnv(filterCallback) {
     }
 
     console.log(
-      `  ${colors.green}${name}${colors.reset}: ` +
-      `${colors.yellow}${displayValue}${colors.reset}`
+      `  ${colorize(name, colors.green)}: ` +
+      colorize(displayValue, colors.yellow)
     )
   }
 }
@@ -110,8 +118,8 @@ function exec(command, args, options = {}) {
       ...options
     })
   } catch (error) {
-    log(`Error executing command: ${cmd_str}`, 'red', '❌')
-    log(error.message, 'red')
+    log(colorize(`Error executing command: ${cmd_str} ❌`, colors.red))
+    log(colorize(error.message, colors.red))
     throw error
   }
 }
@@ -159,7 +167,7 @@ async function main() {
 
     // Set up SSH keys if provided
     if (inputs['source-ssh-key'] || inputs['target-ssh-key']) {
-      log('Setting up SSH keys...', 'blue', '🔑')
+      log(colorize('🔑 Setting up SSH keys...', colors.blue))
       fs.mkdirSync(sshDir, { recursive: true })
 
       if (inputs['source-ssh-key']) {
@@ -177,7 +185,7 @@ async function main() {
     }
 
     // Clone source repository
-    log('Cloning source repository...', 'cyan', '📥')
+    log(colorize('📥 Cloning source repository...', colors.cyan))
     exec('git', ['clone', '--verbose', '--mirror', inputs['source-repo'], clonedRepoPath])
 
     // Set up target repository URL
@@ -190,7 +198,7 @@ async function main() {
     }
 
     // Mirror repository
-    log('Mirroring repository...', 'green', '🔄')
+    log(colorize('🔄 Mirroring repository...', colors.green))
     withCwd(clonedRepoPath, async () => {
       exec('git', ['push', '--verbose', '--mirror', targetRepoUrl])
   
@@ -204,13 +212,13 @@ async function main() {
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
       setOutput('last-commit-hash', lastCommitHash)
     })
-    log('Repository mirrored successfully!', 'green', '✅')
+    log(colorize('✅ Repository mirrored successfully!', colors.green))
   } catch (error) {
-    log(error.message, 'red', '❌')
+    log(colorize(error.message, colors.red))
     process.exit(1)
   } finally {
     // Clean up
-    log('Cleaning up...', 'yellow', '🧹');
+    log(colorize('🧹 Cleaning up...', colors.yellow));
     fs.rmSync(sshSourceKeyPath, { force: true })
     fs.rmSync(sshTargetKeyPath, { force: true })
     fs.rmSync(clonedRepoPath, { recursive: true, force: true })
