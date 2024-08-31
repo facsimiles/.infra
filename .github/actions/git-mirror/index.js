@@ -122,11 +122,14 @@ function exec(command, args, options = {}) {
     backtick + colorize(arg, colors.rgb(200, 200, 200)) + backtick
   ).join(' ')
   log(colorize(`🚀 Executing command: `, colors.magenta) + cmd_str)
-  return execFileSync(command, args, {
+  const output = execFileSync(command, args, {
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'inherit'],
     ...options
   })
+  process.stdout.flush()
+  process.stderr.flush()
+  return output
 }
 
 // Function to set output for GitHub Actions
