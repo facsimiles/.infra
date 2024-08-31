@@ -175,7 +175,7 @@ async function main() {
 
     // Clone source repository
     log('Cloning source repository...', 'cyan', '📥')
-    exec('git', ['clone', '--mirror', inputs['source-repo'], clonedRepoPath])
+    exec('git', ['clone', '--verbose', '--mirror', inputs['source-repo'], clonedRepoPath])
 
     // Set up target repository URL
     let targetRepoUrl;
