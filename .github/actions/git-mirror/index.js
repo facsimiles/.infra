@@ -112,12 +112,12 @@ async function main() {
 
       if (inputs['source-ssh-key']) {
         fs.writeFileSync(sourceKeyPath, inputs['source-ssh-key'], { mode: 0o600 });
-        fs.appendFileSync(sshConfigPath, 'IdentityFile ~/.ssh/source_key\n');
+        fs.appendFileSync(sshConfigPath, `IdentityFile ${sourceKeyPath}\n`);
       }
 
       if (inputs['target-ssh-key']) {
         fs.writeFileSync(targetKeyPath, inputs['target-ssh-key'], { mode: 0o600 });
-        fs.appendFileSync(sshConfigPath, 'IdentityFile ~/.ssh/target_key\n');
+        fs.appendFileSync(sshConfigPath, `IdentityFile ${targetKeyPath}\n`);
       }
 
       exec('ssh-keyscan', ['-H', 'github.com', '>>', knownHostsPath]);
