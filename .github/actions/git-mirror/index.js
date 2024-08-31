@@ -120,7 +120,8 @@ async function main() {
         fs.appendFileSync(sshConfigPath, `IdentityFile ${targetKeyPath}\n`);
       }
 
-      exec('ssh-keyscan', ['-H', 'github.com', '>>', knownHostsPath]);
+      const output = exec('ssh-keyscan', ['-H', 'github.com'])
+      fs.appendFileSync(knownHostsPath, output)
     }
 
     // Clone source repository
