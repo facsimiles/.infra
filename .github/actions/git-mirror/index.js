@@ -66,8 +66,8 @@ function log(message, color = 'reset', emoji = '') {
     return `${colors.rgb(60, 60, 60)}0${colors.reset}`.repeat(len-str.length) + prefix + str + suffix
   }
   const elapsed = Date.now() - START_TIME
-  const seconds = colorizedZeroPad(colors.rgb(100, 80, 220), Math.floor(elapsed / 1000), colors.reset, 3)
-  const milliseconds = colorizedZeroPad(colors.rgb(80, 110, 250), elapsed % 1000, colors.reset, 3)
+  const seconds = formatNum(colors.rgb(100, 80, 220), Math.floor(elapsed / 1000), colors.reset, 3)
+  const milliseconds = formatNum(colors.rgb(80, 110, 250), elapsed % 1000, colors.reset, 3)
   
   const elapsedStr = `${colors.rgb(170, 170, 170)}[${colors.reset}${colors.blue}+${colors.reset}${seconds}${colors.blue}.${colors.reset}${milliseconds}${colors.rgb(170, 170, 170)}ms]${colors.reset}`
   
