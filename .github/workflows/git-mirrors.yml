@@ -1,4 +1,4 @@
-name: "Git Mirrors #1"
+name: "Git Mirrors"
 
 on:
   schedule:
