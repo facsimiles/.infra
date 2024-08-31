@@ -61,10 +61,13 @@ const START_TIME = Date.now();
 
 // Logging function with colors and emojis
 function log(message, color = 'reset', emoji = '') {
+  function formatNum(prefix, num, suffix, len) {
+    const str = num.toString()
+    return `${colors.rgb(60, 60, 60)}0${colors.reset}`.repeat(len-str.length) + prefix + str + suffix
+  }
   const elapsed = Date.now() - START_TIME
-  const colorizedZeroPad = (str, len) => str.padStart(len, '@').replace(/@/g, `${colors.rgb(60, 60, 60)}0${colors.reset}`)
-  const seconds = colorizedZeroPad(`${colors.rgb(80, 60, 220)}${Math.floor(elapsed / 1000).toString()}${colors.reset}`, 3)
-  const milliseconds = colorizedZeroPad(`${colors.rgb(60, 90, 250)}${(elapsed % 1000).toString()}${colors.reset}`, 3)
+  const seconds = colorizedZeroPad(colors.rgb(100, 80, 220), Math.floor(elapsed / 1000), colors.reset, 3)
+  const milliseconds = colorizedZeroPad(colors.rgb(80, 110, 250), elapsed % 1000, colors.reset, 3)
   
   const elapsedStr = `${colors.rgb(170, 170, 170)}[${colors.reset}${colors.blue}+${colors.reset}${seconds}${colors.blue}.${colors.reset}${milliseconds}${colors.rgb(170, 170, 170)}ms]${colors.reset}`
   
