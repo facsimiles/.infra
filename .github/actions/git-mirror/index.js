@@ -8,15 +8,41 @@ const { execFileSync } = require('child_process')
 const colors = {
   reset: '\x1b[0m',
 
-  bold: "\x1b[1m",
-  underline: "\x1b[4m",
-  
+  // Styles
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
+  italic: '\x1b[3m',
+  underline: '\x1b[4m',
+  blink: '\x1b[5m',
+  inverse: '\x1b[7m',
+  hidden: '\x1b[8m',
+  strikethrough: '\x1b[9m',
+
+  // 8-bit Colors
+  black: '\x1b[30m',
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
+  white: '\x1b[37m',
+
+  // Bright 8-bit Colors
+  brightBlack: '\x1b[90m',
+  brightRed: '\x1b[91m',
+  brightGreen: '\x1b[92m',
+  brightYellow: '\x1b[93m',
+  brightBlue: '\x1b[94m',
+  brightMagenta: '\x1b[95m',
+  brightCyan: '\x1b[96m',
+  brightWhite: '\x1b[97m',
+
+  // 24-bit Colors (Foreground)
+  fgColor: (r, g, b) => `\x1b[38;2;${r};${g};${b}m`,
+
+  // 24-bit Colors (Background)
+  bgColor: (r, g, b) => `\x1b[48;2;${r};${g};${b}m`,
 }
 
 // Class to handle inputs using Proxy
@@ -36,12 +62,13 @@ const START_TIME = Date.now();
 
 // Logging function with colors and emojis
 function log(message, color = 'reset', emoji = '') {
-  const elapsed = Date.now() - START_TIME
-  const seconds = Math.floor(elapsed / 1000).toString().padStart(3, '0')
-  const milliseconds = (elapsed % 1000).toString().padStart(3, '0')
-  const elapsedStr = `[+${seconds}.${milliseconds}ms]`
+  const elapsed = Date.now() - START_TIME;
+  const seconds = Math.floor(elapsed / 1000).toString().padStart(3, '0');
+  const milliseconds = (elapsed % 1000).toString().padStart(3, '0');
   
-  console.log(`${colors.cyan}${elapsedStr}${colors.reset} ${colors[color]}${emoji} ${message}${colors.reset}`)
+  const elapsedStr = `${colors.dim}[${colors.reset}${colors.green}+${colors.reset}${colors.yellow}${seconds}${colors.reset}${colors.green}.${colors.reset}${colors.cyan}${milliseconds}${colors.reset}${colors.dim}ms]${colors.reset}`;
+  
+  console.log(`${elapsedStr} ${colors[color]}${emoji} ${message}${colors.reset}`);
 }
 
 function prettyPrintEnv(filterCallback) {
