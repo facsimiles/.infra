@@ -4,6 +4,19 @@ const os     = require('os')
 const path   = require('path')
 const { execFileSync } = require('child_process')
 
+
+const inputNames = {
+  sourceRepo: 'source-repo',
+  targetRepo: 'target-repo',
+  sourceSshKey: 'source-ssh-key',
+  targetSshKey: 'target-ssh-key',
+  targetToken: 'target-token',
+}
+
+const outputNames = {
+  headCommitHash: 'head-commit-hash',
+}
+
 // ANSI color codes
 const colors = {
   reset: '\x1b[0m',
@@ -41,8 +54,13 @@ const colors = {
   rgb: (r, g = r, b = r) => `\x1b[38;2;${r};${g};${b}m`,
 
   // 24-bit Colors (Background)
-  rgbBg: (r, g, b) => `\x1b[48;2;${r};${g};${b}m`,
+  rgbBg: (r, g = r, b = r) => `\x1b[48;2;${r};${g};${b}m`,
 }
+
+// Function to get the elapsed time since the start of the script
+const START_TIME = Date.now();
+
+///////////////////////////
 
 function colorize(str, color) {
   return `${color}${str}${colors.reset}`
@@ -67,9 +85,6 @@ class Inputs {
     })
   }
 }
-
-// Function to get the elapsed time since the start of the script
-const START_TIME = Date.now();
 
 // Logging function with colors and emojis
 function log(message) {
@@ -113,7 +128,6 @@ function prettyPrintEnv(filterCallback) {
     )
   }
 }
-
 
 // Function to execute shell commands
 function exec(command, args, options = {}) {
@@ -197,38 +211,37 @@ async function main() {
 
   try {
     // Input validation
-    const requiredInputs = ['source-repo', 'target-repo']
+    const requiredInputs = [inputNames.sourceRepo, inputNames.targetRepo]
     for (const input of requiredInputs) {
       if ( ! inputs[input] ) {
         prettyPrintEnv((name, value) => name.startsWith('INPUT_'))
-        throw new Error(`Missing required input: ${input}`)
+        throw new Error(`Missing required input: \`${input}\``)
       }
     }
 
-    if ( ! inputs['target-ssh-key'] && ! inputs['target-token'] ) {
-      throw new Error('Either target-ssh-key or target-token must be provided')
+    if ( ! inputs[inputNames.targetSshKey] && ! inputs[inputNames.targetToken] ) {
+      throw new Error(`Either \`${inputNames.targetSshKey}\` or \`${inputNames.targetToken}\` inputs must be provided`)
     }
 
     // Set up SSH agent if SSH keys are provided
-    if ( inputs['source-ssh-key'] || inputs['target-ssh-key'] ) {
+    if ( inputs[inputNames.sourceSshKey] || inputs[inputNames.targetSshKey] ) {
       usingSsh = true
-      setupSSHAgent(inputs['source-ssh-key'], inputs['target-ssh-key'])
-      delete inputs['source-ssh-key']
-      delete inputs['target-ssh-key']
-      prettyPrintEnv((name, value) => name.startsWith('INPUT_'))
+      setupSSHAgent(inputs[inputNames.sourceSshKey], inputs[inputNames.targetSshKey])
+      delete inputs[inputNames.sourceSshKey]
+      delete inputs[inputNames.targetSshKey]
       fs.mkdirSync(sshDir, { recursive: true })
       fs.appendFileSync(sshConfigPath, 'StrictHostKeyChecking=no\n')
     }
 
     // Clone source repository
     log(colorize('📥 Cloning source repository...', colors.cyan))
-    exec('git', ['clone', '--verbose', '--mirror', inputs['source-repo'], clonedRepoPath])
+    exec('git', ['clone', '--verbose', '--mirror', inputs[inputNames.sourceRepo], clonedRepoPath])
 
     // Set up target repository URL
-    let targetRepoUrl = inputs['target-repo']
-    if ( inputs['target-token'] ) {
-      const repoPath = inputs['target-repo'].replace('https://github.com/', '')
-      targetRepoUrl = `https://x-access-token:${inputs['target-token']}@github.com/${repoPath}`
+    let targetRepoUrl = inputs[inputNames.targetRepo]
+    if ( inputs[inputNames.targetToken] ) {
+      const repoPath = inputs[inputNames.targetRepo].replace('https://github.com/', '')
+      targetRepoUrl = `https://x-access-token:${inputs[inputNames.targetToken]}@github.com/${repoPath}`
     }
 
     // Mirror repository
@@ -238,7 +251,7 @@ async function main() {
 
       // Get last commit hash
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
-      setOutput('head-commit-hash', lastCommitHash)
+      setOutput(outputNames.headCommitHash, lastCommitHash)
     })
     log(colorize('✅ Repository mirrored successfully!', colors.green))
   } catch ( error ) {
