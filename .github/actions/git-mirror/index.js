@@ -63,10 +63,10 @@ const START_TIME = Date.now();
 function log(message, color = 'reset', emoji = '') {
   const elapsed = Date.now() - START_TIME
   const colorizedZeroPad = (str, len) => str.padStart(len, '@').replace(/@/g, `${colors.rgb(60, 60, 60)}0${colors.reset}`)
-  const seconds = colorizedZeroPad(`${colors.rgb(40, 20, 170)}${Math.floor(elapsed / 1000).toString()}${colors.reset}`, 3)
-  const milliseconds = colorizedZeroPad(`${colors.rgb(20, 50, 210)}${(elapsed % 1000).toString()}${colors.reset}`, 3)
+  const seconds = colorizedZeroPad(`${colors.rgb(80, 60, 220)}${Math.floor(elapsed / 1000).toString()}${colors.reset}`, 3)
+  const milliseconds = colorizedZeroPad(`${colors.rgb(60, 90, 250)}${(elapsed % 1000).toString()}${colors.reset}`, 3)
   
-  const elapsedStr = `${colors.rgb(200, 200, 200)}[${colors.reset}${colors.blue}+${colors.reset}${seconds}${colors.blue}.${colors.reset}${milliseconds}${colors.rgb(200, 200, 200)}ms]${colors.reset}`
+  const elapsedStr = `${colors.rgb(170, 170, 170)}[${colors.reset}${colors.blue}+${colors.reset}${seconds}${colors.blue}.${colors.reset}${milliseconds}${colors.rgb(170, 170, 170)}ms]${colors.reset}`
   
   console.log(`${elapsedStr} ${colors[color]}${emoji} ${message}${colors.reset}`)
 }
