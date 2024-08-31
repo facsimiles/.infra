@@ -55,7 +55,7 @@ function prettyPrintEnv() {
       displayValue = value.slice(0, 252) + '...';
     }
     console.log(
-      `${colors.green}${key}${colors.reset}: ` +
+      `  ${colors.green}${key}${colors.reset}: ` +
       `${colors.yellow}${displayValue}${colors.reset}`
     );
   }
