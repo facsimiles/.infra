@@ -163,7 +163,6 @@ function stopSSHAgent() {
 
 // Main function
 async function main() {
-  // Instantiate Inputs class
   const inputs = new Inputs()
   
   const sshDir = path.join(os.homedir(), '.ssh')
@@ -172,23 +171,27 @@ async function main() {
 
   const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), 'cloned-repo-'))
 
+  let usingSsh = false
+
   try {
     // Input validation
     const requiredInputs = ['source-repo', 'target-repo']
     for (const input of requiredInputs) {
-      if (!inputs[input]) {
+      if ( ! inputs[input] ) {
         prettyPrintEnv((name, value) => name.startsWith('INPUT_'))
         throw new Error(`Missing required input: ${input}`)
       }
     }
 
-    if (!inputs['target-ssh-key'] && !inputs['target-token']) {
+    if ( ! inputs['target-ssh-key'] && ! inputs['target-token'] ) {
       throw new Error('Either target-ssh-key or target-token must be provided')
     }
 
     // Set up SSH agent if SSH keys are provided
-    if (inputs['source-ssh-key'] || inputs['target-ssh-key']) {
-      setupSSHAgent()
+    if ( inputs['source-ssh-key'] || inputs['target-ssh-key'] ) {
+      usingSsh = true
+      setupSSHAgent(inputs['source-ssh-key'], inputs['target-ssh-key'])
+      // TODO: delete the env vars with keys
       fs.mkdirSync(sshDir, { recursive: true })
       fs.appendFileSync(sshConfigPath, 'StrictHostKeyChecking=no\n')
     }
@@ -199,7 +202,7 @@ async function main() {
 
     // Set up target repository URL
     let targetRepoUrl = inputs['target-repo']
-    if (inputs['target-token']) {
+    if ( inputs['target-token'] ) {
       const repoPath = inputs['target-repo'].replace('https://github.com/', '')
       targetRepoUrl = `https://x-access-token:${inputs['target-token']}@github.com/${repoPath}`
     }
@@ -214,13 +217,13 @@ async function main() {
       setOutput('head-commit-hash', lastCommitHash)
     })
     log(colorize('✅ Repository mirrored successfully!', colors.green))
-  } catch (error) {
+  } catch ( error ) {
     log(colorize(error.message, colors.red))
     process.exit(1)
   } finally {
     // Clean up
     log(colorize('🧹 Cleaning up...', colors.yellow));
-    if (inputs['source-ssh-key'] || inputs['target-ssh-key']) {
+    if ( usingSsh ) {
       stopSSHAgent()
     }
     fs.rmSync(clonedRepoPath, { recursive: true, force: true })
