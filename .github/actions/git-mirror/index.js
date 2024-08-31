@@ -60,10 +60,17 @@ function setOutput(name, value) {
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}<<${uuid}\n${value}\n${uuid}\n`);
 }
 
-// Helper function to get input from environment variables
-function getInput(name) {
-  return process.env[`INPUT_${name.toUpperCase()}`];
+// Class to handle inputs using Proxy
+class Inputs {
+  constructor() {
+    return new Proxy(this, {
+      get: (target, prop) => process.env[`INPUT_${prop.toUpperCase()}`]
+    });
+  }
 }
+
+// Instantiate Inputs class
+const inputs = new Inputs();
 
 // Main function
 async function main() {
@@ -73,28 +80,28 @@ async function main() {
     // Input validation
     const requiredInputs = ['source-repo', 'target-repo'];
     for (const input of requiredInputs) {
-      if (!getInput(input)) {
+      if (!inputs[input]) {
         throw new Error(`Missing required input: ${input}`);
       }
     }
 
-    if (!getInput('target-ssh-key') && !getInput('target-token')) {
+    if (!inputs['target-ssh-key'] && !inputs['target-token']) {
       throw new Error('Either target-ssh-key or target-token must be provided');
     }
 
     // Set up SSH keys if provided
-    if (getInput('source-ssh-key') || getInput('target-ssh-key')) {
+    if (inputs['source-ssh-key'] || inputs['target-ssh-key']) {
       log('Setting up SSH keys...', 'blue', '🔑');
       const sshDir = path.join(process.env.HOME, '.ssh');
       fs.mkdirSync(sshDir, { recursive: true });
 
-      if (getInput('source-ssh-key')) {
-        fs.writeFileSync(path.join(sshDir, 'source_key'), getInput('source-ssh-key'), { mode: 0o600 });
+      if (inputs['source-ssh-key']) {
+        fs.writeFileSync(path.join(sshDir, 'source_key'), inputs['source-ssh-key'], { mode: 0o600 });
         fs.appendFileSync(path.join(sshDir, 'config'), 'IdentityFile ~/.ssh/source_key\n');
       }
 
-      if (getInput('target-ssh-key')) {
-        fs.writeFileSync(path.join(sshDir, 'target_key'), getInput('target-ssh-key'), { mode: 0o600 });
+      if (inputs['target-ssh-key']) {
+        fs.writeFileSync(path.join(sshDir, 'target_key'), inputs['target-ssh-key'], { mode: 0o600 });
         fs.appendFileSync(path.join(sshDir, 'config'), 'IdentityFile ~/.ssh/target_key\n');
       }
 
@@ -103,17 +110,17 @@ async function main() {
 
     // Clone source repository
     log('Cloning source repository...', 'cyan', '📥');
-    exec('git', ['clone', '--mirror', getInput('source-repo'), 'source_repo']);
+    exec('git', ['clone', '--mirror', inputs['source-repo'], 'source_repo']);
     const sourceRepoPath = path.join(process.cwd(), 'source_repo');
     setOutput('source-repo-path', sourceRepoPath);
 
     // Set up target repository URL
     let targetRepoUrl;
-    if (getInput('target-ssh-key')) {
-      targetRepoUrl = getInput('target-repo');
+    if (inputs['target-ssh-key']) {
+      targetRepoUrl = inputs['target-repo'];
     } else {
-      const repoPath = getInput('target-repo').replace('https://github.com/', '');
-      targetRepoUrl = `https://x-access-token:${getInput('target-token')}@github.com/${repoPath}`;
+      const repoPath = inputs['target-repo'].replace('https://github.com/', '');
+      targetRepoUrl = `https://x-access-token:${inputs['target-token']}@github.com/${repoPath}`;
     }
     setOutput('target-repo-path', targetRepoUrl);
 
