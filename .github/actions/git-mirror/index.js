@@ -119,7 +119,7 @@ function prettyPrintEnv(filterCallback) {
 function exec(command, args, options = {}) {
   const backtick = colorize('`', colors.rgb(100, 100, 100))
   const cmd_str = [command, ...args].map(arg =>
-    backtick + colorize(str, colors.rgb(200, 200, 200)) + backtick
+    backtick + colorize(arg, colors.rgb(200, 200, 200)) + backtick
   ).join(' ')
   log(colorize(`🚀 Executing command: `, colors.magenta) + cmd_str)
   return execFileSync(command, args, {
@@ -235,7 +235,8 @@ async function main() {
     log(colorize('✅ Repository mirrored successfully!', colors.green))
   } catch ( error ) {
     log(colorize(error.message, colors.red))
-    process.exit(1)
+    process.exitCode = 1
+    throw error
   } finally {
     // Clean up
     log(colorize('🧹 Cleaning up...', colors.yellow));
