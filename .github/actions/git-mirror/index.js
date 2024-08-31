@@ -66,7 +66,7 @@ function log(message, color = 'reset', emoji = '') {
   const seconds = Math.floor(elapsed / 1000).toString().padStart(3, `${colors.rgb(30, 30, 30)}0${colors.reset}`)
   const milliseconds = (elapsed % 1000).toString().padStart(3, `${colors.rgb(30, 30, 30)}0${colors.reset}`)
   
-  const elapsedStr = `${colors.dim}[${colors.reset}${colors.green}+${colors.reset}${colors.yellow}${seconds}${colors.reset}${colors.green}.${colors.reset}${colors.cyan}${milliseconds}${colors.reset}${colors.dim}ms]${colors.reset}`
+  const elapsedStr = `${colors.dim}[${colors.reset}${colors.green}+${colors.reset}${'' && colors.yellow}${seconds}${colors.reset}${colors.green}.${colors.reset}${'' && colors.cyan}${milliseconds}${colors.reset}${colors.dim}ms]${colors.reset}`
   
   console.log(`${elapsedStr} ${colors[color]}${emoji} ${message}${colors.reset}`)
 }
@@ -169,7 +169,7 @@ async function main() {
         fs.appendFileSync(sshConfigPath, `IdentityFile ${sshTargetKeyPath}\n`)
       }
 
-      const output = exec('ssh-keyscan', ['-H', 'github.com'])
+      const output = exec('ssh-keyscan', ['-H', 'github.com'], {stdio: ['ignore', 'pipe', 'pipe']})
       fs.appendFileSync(sshKnownHostsPath, output)
     }
 
