@@ -194,7 +194,7 @@ class CredentialManager {
 class SSHCredentialManager extends CredentialManager {
   static #sshKeyPattern = /^-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/
   static #sshDir = path.join(os.homedir(), '.ssh')
-  static #sshConfigPath = path.join(this.constructor.#sshDir, 'config')
+  static #sshConfigPath = path.join(SSHCredentialManager.#sshDir, 'config')
 
   static #validateSecret(secret) {
     return this.constructor.#sshKeyPattern.test(secret)
