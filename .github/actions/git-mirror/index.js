@@ -74,8 +74,7 @@ function exec(command, args, options = {}) {
       stdio[2] === 'inherit' ? 'pipe' : stdio[2],
     ],
   })
-  console.log(`'child':`)
-  console.log(child)
+  console.log({stdout: child.stdout, stderr: child.stderr})
 
   let stdout = ''
   let stderr = ''
