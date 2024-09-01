@@ -41,7 +41,7 @@ jobs:
         uses: './.github/actions/git-mirror'
         with:
           'source-repo':    ${{ vars['SOURCE_REPO'] }}
-          'target-repo':    ${{ vars['TARGET_REPO'] }}
+          'target-repo':    ${{ vars['TARGET_REPO'] || fromJSON(matrix['json'])['name'] }}
           'branch':         ${{ vars['BRANCH'] }}
           'target-ssh-key': ${{ secrets['TARGET_SSH_KEY'] }}
           'target-token':   ${{ secrets['TARGET_TOKEN'] }}
