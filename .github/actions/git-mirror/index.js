@@ -177,7 +177,7 @@ class CredentialManager {
   setupGlobal() {
     this.#setRemoteUrl()
     this.#addSecret()
-    delete this.#secret
+    this.#secret = ''
   }
 
   #setRemoteUrl() { throw new Error('Method not implemented') }
