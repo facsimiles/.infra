@@ -5,9 +5,6 @@ inputs:
   'source-repo':
     description: "URL of the source git repository"
     required: true
-  'source-ssh-key':
-    description: "SSH private key for the source repository (if needed)"
-    required: false
   'target-repo':
     description: "URL of the target GitHub repository"
     required: true
