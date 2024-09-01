@@ -160,13 +160,13 @@ async function withCwd(directory, callback) {
 }
 
 class CredentialManager {
-  #repo
-  #secret
-  get #remoteUrl() { throw new Error('Method not implemented') }
+  _repo
+  _secret
+  get _remoteUrl() { throw new Error('Method not implemented') }
   
   constructor(repo, secret) {
-    this.#repo = repo
-    this.#secret = secret
+    this._repo = repo
+    this._secret = secret
     if ( ! this.constructor.#validateSecret(secret) ) {
       throw new Error('Invalid secret format')
     }
@@ -177,14 +177,14 @@ class CredentialManager {
   setupGlobal() {
     this.#setRemoteUrl()
     this.#addSecret()
-    this.#secret = ''
+    this._secret = ''
   }
 
   #setRemoteUrl() { throw new Error('Method not implemented') }
   #addSecret() { throw new Error('Method not implemented') }
 
   setupLocal() {
-    exec('git', ['remote', '--verbose', 'add', '--', GIT_REMOTE_NAME, this.#remoteUrl])
+    exec('git', ['remote', '--verbose', 'add', '--', GIT_REMOTE_NAME, this._remoteUrl])
   }
 
   teardownLocal() { /* Default implementation does nothing */ }
@@ -200,8 +200,8 @@ class SSHCredentialManager extends CredentialManager {
     return this.constructor.#sshKeyPattern.test(secret)
   }
 
-  get #remoteUrl() {
-    return `git@github.com:${this.#repo}.git`
+  get _remoteUrl() {
+    return `git@github.com:${this._repo}.git`
   }
 
   #addSecret() {
@@ -216,7 +216,7 @@ class SSHCredentialManager extends CredentialManager {
     Object.assign(process.env, match.groups)
     
     log(colorize('🔑 Adding SSH key...', colors.yellow))
-    execFileSync('ssh-add', ['-vvv', '-'], { input: this.#secret })
+    execFileSync('ssh-add', ['-vvv', '-'], { input: this._secret })
   
     fs.mkdirSync(this.constructor.#sshDir, { recursive: true })
     this.#appendToSSHConfig('StrictHostKeyChecking', 'no')
@@ -241,15 +241,15 @@ class GitTokenCredentialManager extends CredentialManager {
     return this.constructor.#tokenPattern.test(secret)
   }
 
-  get #remoteUrl() {
-    return `https://github.com/${this.#repo}.git`
+  get _remoteUrl() {
+    return `https://github.com/${this._repo}.git`
   }
 
   addSecret() {
     log(colorize('🔐 Setting up Git credential cache...', colors.blue))
     exec('git', ['credential-cache', '--daemon'])
 
-    const gitCredentialInput = `protocol=https\nhost=github.com\nusername=x-access-token\npassword=${this.#secret}\n`
+    const gitCredentialInput = `protocol=https\nhost=github.com\nusername=x-access-token\npassword=${this._secret}\n`
     log(colorize('🔑 Adding GitHub token...', colors.yellow))
     exec('git', ['credential-cache', 'store'], { input: gitCredentialInput })
   }
