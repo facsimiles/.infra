@@ -56,8 +56,9 @@ const colors = {
   rgbBg: (r, g = r, b = r) => `\x1b[48;2;${r};${g};${b}m`,
 }
 
-// Function to get the elapsed time since the start of the script
-const START_TIME = Date.now();
+const START_TIME = Date.now()
+
+const GIT_REMOTE_UPSTREAM_NAME = 'upstream'
 
 ///////////////////////////
 
@@ -158,72 +159,96 @@ async function withCwd(directory, callback) {
     }
 }
 
-function validateSSHKey(key) {
-  const sshKeyPattern = /^-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/;
-  return sshKeyPattern.test(key);
+class CredentialManager {
+  validateSecret(secret) { throw new Error('Method not implemented.'); }
+  setupGlobal(repo, secret) { throw new Error('Method not implemented.'); }
+  setupLocal() { throw new Error('Method not implemented.'); }
+  teardownLocal() { throw new Error('Method not implemented.'); }
+  teardownGlobal() { throw new Error('Method not implemented.'); }
 }
 
-function validateGitHubToken(token) {
-  const tokenPattern = /^[a-zA-Z0-9_-]{40}$/;
-  return tokenPattern.test(token);
-}
+class SSHAgent extends CredentialManager {
+  static sshKeyPattern = /^-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/
 
-function setupSSHAgent(targetSshKey) {
-  log(colorize('🔐 Setting up SSH agent...', colors.blue))
-  const sshAgentOutput = exec('ssh-agent', [
-    '-s', // Generate Bourne shell commands on stdout.
-  ])
-  const match = sshAgentOutput.match(
-    /SSH_AUTH_SOCK=(?<SSH_AUTH_SOCK>[^;]+).*SSH_AGENT_PID=(?<SSH_AGENT_PID>\d+)/s
-  )
-  if ( ! match ) {
-    throw new Error('Failed to start SSH agent')
+  static sshDir = path.join(os.homedir(), '.ssh')
+  static sshConfigPath = path.join(sshDir, 'config')
+  
+  validateSecret(sshKey) {
+    return this.sshKeyPattern.test(sshKey)
   }
-  Object.assign(process.env, match.groups)
 
-  if ( targetSshKey ) {
-    log(colorize('🔑 Adding target SSH key...', colors.yellow))
-    execFileSync('ssh-add', ['-vvv', '-'], { input: targetSshKey })
+  appendToSSHConfig(key, value) {
+    const configLine = `${key}=${value}\n`
+    // TODO log(configLine)
+    fs.appendFileSync(this.sshConfigPath, configLine)
+  }
+  
+  setupGlobal(repo, sshKey) {
+    log(colorize('🔐 Setting up SSH agent...', colors.blue))
+
+    this.remoteUrl = `git@github.com:${repo}.git`
+
+    const sshAgentOutput = exec('ssh-agent', ['-s'])
+    const match = sshAgentOutput.match(
+      /SSH_AUTH_SOCK=(?<SSH_AUTH_SOCK>[^;]+).*SSH_AGENT_PID=(?<SSH_AGENT_PID>\d+)/s
+    )
+    if ( ! match ) {
+      throw new Error('Failed to start SSH agent')
+    }
+    Object.assign(process.env, match.groups)
+    
+    log(colorize('🔑 Adding SSH key...', colors.yellow))
+    execFileSync('ssh-add', ['-vvv', '-'], { input: sshKey })
+  
+    fs.mkdirSync(this.sshDir, { recursive: true })
+    this.appendToSSHConfig('StrictHostKeyChecking', 'no')
+  }
+
+  setupLocal()    {
+    exec('git', ['remote', '--verbose', 'add', '--', GIT_REMOTE_UPSTREAM_NAME, this.remoteUrl])
+  }
+  teardownLocal() { /* pass */ }
+
+  teardownGlobal() {
+    log(colorize('🔒 Stopping SSH agent...', colors.blue))
+    exec('ssh-agent', ['-k'])
   }
 }
 
-function teardownSSHAgent() {
-  log(colorize('🔒 Stopping SSH agent...', colors.blue))
-  exec('ssh-agent', [
-    '-k', // Kill the current agent.
-  ])
-}
+class GitCredentialCache extends CredentialManager {
+  static tokenPattern = /^[a-zA-Z0-9_-]{40}$/
 
-function setupGitCredentialCache(token) {
-  log(colorize('🔐 Setting up Git credential cache...', colors.blue))
-  
-  // Start the credential cache daemon
-  exec('git', ['credential-cache', '--daemon'])
-  
-  // Store the credentials
-  const gitCredentialInput = `protocol=https\nhost=github.com\nusername=x-access-token\npassword=${token}\n`
-  // const result = spawnSync('git', ['credential-cache', 'store'], {
-  //   input: gitCredentialInput,
-  //   encoding: 'utf-8'
-  // })
-  
-  // if (result.status !== 0) {
-  //   throw new Error(`Failed to store credentials: ${result.stderr}`)
-  // }
+  validateSecret(token) {
+    return this.tokenPattern.test(token)
+  }
 
-  exec('git', ['credential-cache', 'store'], {
-    input: gitCredentialInput,
-  })
-}
+  setupGlobal(repo, token) {
+    if ( ! this.validateSecret(token) ) {
+      throw new Error('Invalid GitHub token format')
+    }
+    
+    log(colorize('🔐 Setting up Git credential cache...', colors.blue))
 
-// TODO: better name for this func
-function pushPrepForGitCredentialCache() {
-  exec('git', ['config', '--local', 'credential.helper', 'cache'])  
-}
+    this.remoteUrl = `https://github.com/${repo}.git`
+    
+    exec('git', ['credential-cache', '--daemon'])
 
-function teardownGitCredentialCache() {
-  // Clear the credential cache
-  exec('git', ['credential-cache', 'exit'])
+    const gitCredentialInput = `protocol=https\nhost=github.com\nusername=x-access-token\npassword=${token}\n`
+    log(colorize('🔑 Adding GitHub token...', colors.yellow))
+    exec('git', ['credential-cache', 'store'], { input: gitCredentialInput })
+  }
+
+  setupLocal() {
+    exec('git', ['remote', '--verbose', 'add', '--', GIT_REMOTE_UPSTREAM_NAME, this.remoteUrl])
+    exec('git', ['config', '--local', 'credential.helper', 'cache'])
+  }
+
+  teardownLocal() { /* pass */ }
+
+  teardownGlobal() {
+    log(colorize('🔒 Clearing Git credential cache...', colors.blue))
+    exec('git', ['credential-cache', 'exit'])
+  }
 }
 
 
@@ -233,16 +258,10 @@ async function main() {
   process.stderr._handle.setBlocking(true)
   
   const inputs = new Inputs()
-  
-  const sshDir = path.join(os.homedir(), '.ssh')
-  const sshConfigPath = path.join(sshDir, 'config')
-  const sshKnownHostsPath = path.join(sshDir, 'known_hosts')
+  let credentialManager = null
 
   const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), 'cloned-repo-'))
   fs.chmodSync(clonedRepoPath, 0o700)
-
-  let usingSsh   = false
-  let usingToken = false
 
   try {
     // Input validation
@@ -254,29 +273,26 @@ async function main() {
       }
     }
 
-    if ( ! inputs[inputNames.targetSshKey] && ! inputs[inputNames.targetToken] ) {
-      throw new Error(`Either \`${inputNames.targetSshKey}\` or \`${inputNames.targetToken}\` inputs must be provided`)
+    if ( !inputs[inputNames.targetSshKey] === !inputs[inputNames.targetToken] ) {
+      throw new Error(`Provide either \`${inputNames.targetSshKey}\` or \`${inputNames.targetToken}\` input, not both though.`)
     }
+
+    // Set up target repository URL
+    const targetRepo = targetRepo.includes('/') ?
+      inputs[inputNames.targetRepo] :
+      `${process.env.GITHUB_REPOSITORY_OWNER}/${inputs[inputNames.targetRepo]}`
 
     // Set up SSH agent if SSH keys are provided
     if ( inputs[inputNames.targetSshKey] ) {
-      if ( ! validateSSHKey(inputs[inputNames.targetSshKey]) ) {
-        throw new Error('Invalid SSH key format')
-      }
-      usingSsh = true
-      setupSSHAgent(inputs[inputNames.targetSshKey])
+      credentialManager = SSHAgent()
+      credentialManager.setupGlobal(targetRepo, inputs[inputNames.targetSshKey])
       delete inputs[inputNames.targetSshKey]
-      fs.mkdirSync(sshDir, { recursive: true })
-      fs.appendFileSync(sshConfigPath, 'StrictHostKeyChecking=no\n')
     }
 
     // Set up Git credential cache if token is provided
     if ( inputs[inputNames.targetToken] ) {
-      if ( ! validateGitHubToken(inputs[inputNames.targetToken]) ) {
-        throw new Error('Invalid GitHub token format')
-      }
-      usingToken = true
-      setupGitCredentialCache(inputs[inputNames.targetToken])
+      credentialManager = GitCredentialCache()
+      credentialManager.setupGlobal(targetRepo, inputs[inputNames.targetToken])
       delete inputs[inputNames.targetToken]
     }
 
@@ -284,33 +300,18 @@ async function main() {
     log(colorize('📥 Cloning source repository...', colors.cyan))
     exec('git', ['clone', '--verbose', '--mirror', inputs[inputNames.sourceRepo], clonedRepoPath])
 
-    // Set up target repository URL
-    let targetRepoUrl = inputs[inputNames.targetRepo]
-    if ( ! targetRepoUrl.includes('/') ) {
-      const org = process.env.GITHUB_REPOSITORY_OWNER
-      targetRepoUrl = `${org}/${targetRepoUrl}`
-    }
-
-    if ( usingToken ) {
-      targetRepoUrl = `https://github.com/${targetRepoUrl}.git`
-    } else if ( usingSsh ) {
-      targetRepoUrl = `git@github.com:${targetRepoUrl}.git`
-    } else {
-      throw new Error() // TODO
-    }
-
     // Mirror repository
     log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
     await withCwd(clonedRepoPath, async () => {
-      if ( usingToken ) {
-        pushPrepForGitCredentialCache()
-      }
+      credentialManager.setupLocal()
       
-      exec('git', ['push', '--verbose', '--mirror', targetRepoUrl])
+      exec('git', ['push', '--verbose', '--mirror', GIT_REMOTE_UPSTREAM_NAME])
 
       // Get last commit hash
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
       setOutput(outputNames.headCommitHash, lastCommitHash)
+
+      credentialManager.teardownLocal()
     })
     log(colorize('✅ Repository mirrored successfully!', colors.green))
   } catch ( error ) {
@@ -318,14 +319,8 @@ async function main() {
     process.exitCode = 1
     throw error
   } finally {
-    // Clean up
     log(colorize('🧹 Cleaning up...', colors.yellow));
-    if ( usingSsh ) {
-      teardownSSHAgent()
-    }
-    if ( usingToken ) {
-      teardownGitCredentialCache()
-    }
+    credentialManager.teardownGlobal()
     fs.rmSync(clonedRepoPath, { recursive: true, force: true })
   }
 }
