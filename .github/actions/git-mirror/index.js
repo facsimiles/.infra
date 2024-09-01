@@ -47,7 +47,7 @@ class MutexStream extends Writable {
 const mutexStdout = new MutexStream(process.stdout)
 const mutexStderr = new MutexStream(process.stderr)
 
-function exec(command, args, options = {}) {
+async function exec(command, args, options = {}) {
   const backtick = colorize('`', colors.rgb(100))
   const cmd_str = [command, ...args].map(arg =>
     backtick + colorize(arg, colors.rgb(200)) + backtick
@@ -96,7 +96,7 @@ function exec(command, args, options = {}) {
     })
   }
 
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     child.on('close', (code) => {
       if (code !== 0) {
         const error = new Error(`Command failed with exit code ${code}`)
