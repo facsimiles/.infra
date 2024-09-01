@@ -167,21 +167,21 @@ class CredentialManager {
   constructor(repo, secret) {
     this._repo = repo
     this._secret = secret
-    if ( ! this.constructor.#validateSecret(secret) ) {
+    if ( ! this.constructor._validateSecret(secret) ) {
       throw new Error('Invalid secret format')
     }
   }
 
-  static #validateSecret() { throw new Error('Method not implemented') }
+  static _validateSecret() { throw new Error('Method not implemented') }
   
   setupGlobal() {
-    this.#setRemoteUrl()
-    this.#addSecret()
+    this._setRemoteUrl()
+    this._addSecret()
     this._secret = ''
   }
 
-  #setRemoteUrl() { throw new Error('Method not implemented') }
-  #addSecret() { throw new Error('Method not implemented') }
+  _setRemoteUrl() { throw new Error('Method not implemented') }
+  _addSecret() { throw new Error('Method not implemented') }
 
   setupLocal() {
     exec('git', ['remote', '--verbose', 'add', '--', GIT_REMOTE_NAME, this._remoteUrl])
@@ -196,7 +196,7 @@ class SSHCredentialManager extends CredentialManager {
   static #sshDir = path.join(os.homedir(), '.ssh')
   static #sshConfigPath = path.join(SSHCredentialManager.#sshDir, 'config')
 
-  static #validateSecret(secret) {
+  static _validateSecret(secret) {
     return this.constructor.#sshKeyPattern.test(secret)
   }
 
@@ -204,7 +204,7 @@ class SSHCredentialManager extends CredentialManager {
     return `git@github.com:${this._repo}.git`
   }
 
-  #addSecret() {
+  _addSecret() {
     log(colorize('🔐 Setting up SSH agent...', colors.blue))
     const sshAgentOutput = exec('ssh-agent', ['-s'])
     const match = sshAgentOutput.match(
@@ -237,7 +237,7 @@ class SSHCredentialManager extends CredentialManager {
 class GitTokenCredentialManager extends CredentialManager {
   static #tokenPattern = /^[a-zA-Z0-9_-]{40}$/
 
-  static #validateSecret(secret) {
+  static _validateSecret(secret) {
     return this.constructor.#tokenPattern.test(secret)
   }
 
@@ -328,7 +328,7 @@ async function main() {
     })
     log(colorize('✅ Repository mirrored successfully!', colors.green))
   } catch (error) {
-    log(colorize(error.message, colors.red))
+    log(colorize('❌ ' + error.message, colors.red))
     process.exitCode = 1
     throw error
   } finally {
