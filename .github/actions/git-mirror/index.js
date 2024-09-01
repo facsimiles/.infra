@@ -266,6 +266,19 @@ class GitTokenCredentialManager extends CredentialManager {
   }
 }
 
+function parseAndValidateRepo(inputRepo) {
+  const repoRegex = /^(?:(?<owner>[a-zA-Z0-9_.-]+)\/)?(?<repo>[a-zA-Z0-9_.-]+)$/
+  const match = inputRepo.match(repoRegex)
+  if ( ! match ) {
+    return ''
+  }
+
+  const owner = match.groups.owner || process.env.GITHUB_REPOSITORY_OWNER
+  const repo = match.groups.repo
+
+  return `${owner}/${repo}`
+}
+
 
 async function main() {
   process.stdout._handle.setBlocking(true)
@@ -291,10 +304,10 @@ async function main() {
       throw new Error(`Provide either \`${inputNames.targetSshKey}\` or \`${inputNames.targetToken}\` input, not both though.`)
     }
 
-    // Set up target repository URL
-    const targetRepo = inputs[inputNames.targetRepo].includes("/")
-      ? inputs[inputNames.targetRepo]
-      : `${process.env.GITHUB_REPOSITORY_OWNER}/${inputs[inputNames.targetRepo]}`
+    const targetRepo = parseAndValidateRepo(inputs[inputNames.targetRepo])
+    if ( ! targetRepo ) {
+      throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${inputs[inputNames.targetRepo]}\``)
+    }
 
     // Set up credential manager based on provided input
     if ( inputs[inputNames.targetSshKey] ) {
@@ -311,14 +324,14 @@ async function main() {
 
     // Clone source repository
     log(colorize('📥 Cloning source repository...', colors.cyan))
-    exec('git', ['clone', '--verbose', '--mirror', inputs[inputNames.sourceRepo], clonedRepoPath])
+    exec('git', ['clone', '--verbose', '--mirror', '--', inputs[inputNames.sourceRepo], clonedRepoPath])
 
     // Mirror repository
     log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
     await withCwd(clonedRepoPath, async () => {
       credentialManager.setupLocal()
       
-      exec('git', ['push', '--verbose', '--mirror', GIT_REMOTE_NAME])
+      exec('git', ['push', '--verbose', '--mirror', '--', GIT_REMOTE_NAME])
 
       // Get last commit hash
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
