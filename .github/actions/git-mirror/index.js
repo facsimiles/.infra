@@ -68,7 +68,11 @@ function exec(command, args, options = {}) {
   const child = spawn(command, args, {
     encoding: 'utf8',
     ...options,
-    stdio: stdio
+    stdio: [
+      stdio[0],
+      stdio[1] === 'inherit' ? 'pipe' : stdio[1],
+      stdio[2] === 'inherit' ? 'pipe' : stdio[2],
+    ],
   })
   console.log(`'child':`)
   console.log(child)
