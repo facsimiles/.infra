@@ -34,7 +34,7 @@ class MutexStream extends Writable {
     this._stream = stream
   }
 
-  _write(chunk, encoding, callback) {
+  write(chunk, encoding, callback) {
     mutex.lock().then(unlock => {
       this._stream.write(chunk, encoding, err => {
         unlock()
