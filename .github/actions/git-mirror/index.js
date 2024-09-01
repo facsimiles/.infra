@@ -175,12 +175,10 @@ class CredentialManager {
   static _validateSecret() { throw new Error('Method not implemented') }
   
   setupGlobal() {
-    this._setRemoteUrl()
     this._addSecret()
     this._secret = ''
   }
 
-  _setRemoteUrl() { throw new Error('Method not implemented') }
   _addSecret() { throw new Error('Method not implemented') }
 
   setupLocal() {
