@@ -230,7 +230,9 @@ class SSHCredentialManager extends CredentialManager {
   teardownGlobal() {
     super.teardownGlobal()
     log(colorize('🔒 Stopping SSH agent...', colors.blue))
-    exec('ssh-agent', ['-k'])
+    if ( process.env.SSH_AGENT_PID ) {
+      exec('ssh-agent', ['-k'])
+    }
   }
 }
 
