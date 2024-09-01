@@ -281,6 +281,18 @@ async function main() {
 
     // Set up target repository URL
     let targetRepoUrl = inputs[inputNames.targetRepo]
+    if ( ! targetRepoUrl.includes('/') ) {
+      const org = process.env.GITHUB_REPOSITORY_OWNER
+      targetRepoUrl = `${org}/${targetRepoUrl}`
+    }
+
+    if ( usingToken ) {
+      targetRepoUrl = `https://github.com/${targetRepoUrl}.git`
+    } else if ( usingSsh ) {
+      targetRepoUrl = `git@github.com:${targetRepoUrl}.git`
+    } else {
+      throw new Error() // TODO
+    }
 
     // Mirror repository
     log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
