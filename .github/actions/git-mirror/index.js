@@ -70,6 +70,8 @@ function exec(command, args, options = {}) {
     ...options,
     stdio: stdio
   })
+  console.log(`'child':`)
+  console.log(child)
 
   let stdout = ''
   let stderr = ''
@@ -298,18 +300,18 @@ class CredentialManager {
   }
 
   static _validateSecret(secret) { throw new Error('Method not implemented') }
-  _addSecret() { throw new Error('Method not implemented') }
+  async _addSecret() { throw new Error('Method not implemented') }
   
-  setupGlobal() {
+  async setupGlobal() {
     this._addSecret()
     this._secret = ''
   }
 
-  teardownGlobal() { /* Default implementation does nothing */ }
+  async teardownGlobal() { /* Default implementation does nothing */ }
 
-  setupLocal() { /* Default implementation does nothing */ }
+  async setupLocal() { /* Default implementation does nothing */ }
 
-  teardownLocal() { /* Default implementation does nothing */ }
+  async teardownLocal() { /* Default implementation does nothing */ }
 }
 
 class SSHCredentialManager extends CredentialManager {
