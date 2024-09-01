@@ -197,7 +197,7 @@ class SSHCredentialManager extends CredentialManager {
   static _sshConfigPath = path.join(this._sshDir, 'config')
 
   static _validateSecret(secret) {
-    return this.constructor._sshKeyPattern.test(secret)
+    return SSHCredentialManager._sshKeyPattern.test(secret)
   }
 
   get _remoteUrl() {
@@ -218,13 +218,13 @@ class SSHCredentialManager extends CredentialManager {
     log(colorize('🔑 Adding SSH key...', colors.yellow))
     execFileSync('ssh-add', ['-vvv', '-'], { input: this._secret })
   
-    fs.mkdirSync(this.constructor._sshDir, { recursive: true })
+    fs.mkdirSync(SSHCredentialManager._sshDir, { recursive: true })
     this.#appendToSSHConfig('StrictHostKeyChecking', 'no')
   }
 
   #appendToSSHConfig(key, value) {
     const configLine = `${key}=${value}\n`
-    fs.appendFileSync(this.constructor._sshConfigPath, configLine)
+    fs.appendFileSync(SSHCredentialManager._sshConfigPath, configLine)
   }
 
   teardownGlobal() {
@@ -238,7 +238,7 @@ class GitTokenCredentialManager extends CredentialManager {
   static #tokenPattern = /^[a-zA-Z0-9_-]{40}$/
 
   static _validateSecret(secret) {
-    return this.constructor.#tokenPattern.test(secret)
+    return GitTokenCredentialManager.#tokenPattern.test(secret)
   }
 
   get _remoteUrl() {
