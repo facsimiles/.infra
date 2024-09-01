@@ -58,7 +58,7 @@ const colors = {
 
 const START_TIME = Date.now()
 
-const GIT_REMOTE_NAME = 'mirror'
+// const GIT_REMOTE_NAME = 'mirror'
 
 ///////////////////////////
 
@@ -162,7 +162,7 @@ async function withCwd(directory, callback) {
 class CredentialManager {
   _repo
   _secret
-  get _remoteUrl() { throw new Error('Method not implemented') }
+  get remoteUrl() { throw new Error('Method not implemented') }
   
   constructor(repo, secret) {
     this._repo = repo
@@ -182,7 +182,7 @@ class CredentialManager {
   _addSecret() { throw new Error('Method not implemented') }
 
   setupLocal() {
-    exec('git', ['remote', '--verbose', 'add', '--', GIT_REMOTE_NAME, this._remoteUrl])
+    // exec('git', ['remote', '--verbose', 'add', '--', GIT_REMOTE_NAME, this.remoteUrl])
   }
 
   teardownLocal() { /* Default implementation does nothing */ }
@@ -198,7 +198,7 @@ class SSHCredentialManager extends CredentialManager {
     return SSHCredentialManager._sshKeyPattern.test(secret)
   }
 
-  get _remoteUrl() {
+  get remoteUrl() {
     return `git@github.com:${this._repo}.git`
   }
 
@@ -241,7 +241,7 @@ class GitTokenCredentialManager extends CredentialManager {
     return GitTokenCredentialManager.#tokenPattern.test(secret)
   }
 
-  get _remoteUrl() {
+  get remoteUrl() {
     return `https://github.com/${this._repo}.git`
   }
 
@@ -316,10 +316,10 @@ async function main() {
     assert(false, 'No authentication method provided')
   }
 
+  const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), `${targetRepo.split('/').join('--')}--`))
+  fs.chmodSync(clonedRepoPath, 0o700)
+  
   try {
-    const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), `${targetRepo.split('/').join('--')}--`))
-    fs.chmodSync(clonedRepoPath, 0o700)
-
     credentialManager.setupGlobal()
 
     // Clone source repository
@@ -331,7 +331,7 @@ async function main() {
     await withCwd(clonedRepoPath, async () => {
       credentialManager.setupLocal()
       
-      exec('git', ['push', '--verbose', '--mirror', '--', GIT_REMOTE_NAME])
+      exec('git', ['push', '--verbose', '--mirror', '--', credentialManager.remoteUrl])
 
       // Get last commit hash
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
