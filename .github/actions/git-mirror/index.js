@@ -171,7 +171,7 @@ class SSHAgent extends CredentialManager {
   static sshKeyPattern = /^-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/
 
   static sshDir = path.join(os.homedir(), '.ssh')
-  static sshConfigPath = path.join(sshDir, 'config')
+  static sshConfigPath = path.join(this.sshDir, 'config')
   
   validateSecret(sshKey) {
     return this.sshKeyPattern.test(sshKey)
