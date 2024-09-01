@@ -8,7 +8,6 @@ const { execFileSync, spawnSync } = require('child_process')
 const inputNames = {
   sourceRepo:   'source-repo',
   targetRepo:   'target-repo',
-  sourceSshKey: 'source-ssh-key',
   targetSshKey: 'target-ssh-key',
   targetToken:  'target-token',
 }
@@ -161,7 +160,7 @@ async function withCwd(directory, callback) {
 }
 
 // New function to start SSH agent and add keys
-function setupSSHAgent(sourceSshKey, targetSshKey) {
+function setupSSHAgent(targetSshKey) {
   log(colorize('🔐 Setting up SSH agent...', colors.blue))
   const sshAgentOutput = exec('ssh-agent', [
     '-s', // Generate Bourne shell commands on stdout.
@@ -174,10 +173,6 @@ function setupSSHAgent(sourceSshKey, targetSshKey) {
   }
   Object.assign(process.env, match.groups)
 
-  if ( sourceSshKey ) {
-    log(colorize('🔑 Adding source SSH key...', colors.yellow))
-    execFileSync('ssh-add', ['-vvv', '-'], { input: sourceSshKey })
-  }
   if ( targetSshKey ) {
     log(colorize('🔑 Adding target SSH key...', colors.yellow))
     execFileSync('ssh-add', ['-vvv', '-'], { input: targetSshKey })
@@ -257,11 +252,10 @@ async function main() {
     }
 
     // Set up SSH agent if SSH keys are provided
-    if ( inputs[inputNames.sourceSshKey] || inputs[inputNames.targetSshKey] ) {
+    if ( inputs[inputNames.targetSshKey] ) {
       // TODO: validate the string looks like a private ssh key
       usingSsh = true
-      setupSSHAgent(inputs[inputNames.sourceSshKey], inputs[inputNames.targetSshKey])
-      delete inputs[inputNames.sourceSshKey]
+      setupSSHAgent(inputs[inputNames.targetSshKey])
       delete inputs[inputNames.targetSshKey]
       fs.mkdirSync(sshDir, { recursive: true })
       fs.appendFileSync(sshConfigPath, 'StrictHostKeyChecking=no\n')
