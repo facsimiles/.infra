@@ -37,7 +37,6 @@ jobs:
           'source-repo':    ${{ vars['SOURCE_REPO'] }}
           'target-repo':    ${{ vars['TARGET_REPO'] }}
           'branch':         ${{ vars['BRANCH'] }}
-          'source-ssh-key': ${{ secrets['SOURCE_SSH_KEY'] }}
           'target-ssh-key': ${{ secrets['TARGET_SSH_KEY'] }}
           'target-token':   ${{ secrets['TARGET_TOKEN'] }}
 
