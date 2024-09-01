@@ -2,7 +2,7 @@ const crypto = require('crypto')
 const fs     = require('fs')
 const os     = require('os')
 const path   = require('path')
-const { execFileSync } = require('child_process')
+const { execFileSync, spawnSync } = require('child_process')
 
 
 const inputNames = {
@@ -185,11 +185,43 @@ function setupSSHAgent(sourceSshKey, targetSshKey) {
 }
 
 // New function to stop SSH agent
-function stopSSHAgent() {
+function teardownSSHAgent() {
   log(colorize('🔒 Stopping SSH agent...', colors.blue))
   exec('ssh-agent', [
     '-k', // Kill the current agent.
   ])
+}
+
+function setupGitCredentialCache(token) {
+  log(colorize('🔐 Setting up Git credential cache...', colors.blue))
+  
+  // Start the credential cache daemon
+  exec('git', ['credential-cache', '--daemon'])
+  
+  // Store the credentials
+  const gitCredentialInput = `protocol=https\nhost=github.com\nusername=x-access-token\npassword=${token}\n`
+  // const result = spawnSync('git', ['credential-cache', 'store'], {
+  //   input: gitCredentialInput,
+  //   encoding: 'utf-8'
+  // })
+  
+  // if (result.status !== 0) {
+  //   throw new Error(`Failed to store credentials: ${result.stderr}`)
+  // }
+
+  exec('git', ['credential-cache', 'store'], {
+    input: gitCredentialInput,
+  })
+}
+
+// TODO: better name for this func
+function pushPrepForGitCredentialCache() {
+  exec('git', ['config', '--local', 'credential.helper', 'cache'])  
+}
+
+function teardownGitCredentialCache() {
+  // Clear the credential cache
+  exec('git', ['credential-cache', 'exit'])
 }
 
 
@@ -207,7 +239,8 @@ async function main() {
   const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), 'cloned-repo-'))
   fs.chmodSync(clonedRepoPath, 0o700)
 
-  let usingSsh = false
+  let usingSsh   = false
+  let usingToken = false
 
   try {
     // Input validation
@@ -225,6 +258,7 @@ async function main() {
 
     // Set up SSH agent if SSH keys are provided
     if ( inputs[inputNames.sourceSshKey] || inputs[inputNames.targetSshKey] ) {
+      // TODO: validate the string looks like a private ssh key
       usingSsh = true
       setupSSHAgent(inputs[inputNames.sourceSshKey], inputs[inputNames.targetSshKey])
       delete inputs[inputNames.sourceSshKey]
@@ -233,20 +267,28 @@ async function main() {
       fs.appendFileSync(sshConfigPath, 'StrictHostKeyChecking=no\n')
     }
 
+    // Set up Git credential cache if token is provided
+    if (inputs[inputNames.targetToken]) {
+      // TODO: validate the string looks like a github token
+      usingToken = true
+      setupGitCredentialCache(inputs[inputNames.targetToken])
+      delete inputs[inputNames.targetToken] // Remove token from inputs after use
+    }
+
     // Clone source repository
     log(colorize('📥 Cloning source repository...', colors.cyan))
     exec('git', ['clone', '--verbose', '--mirror', inputs[inputNames.sourceRepo], clonedRepoPath])
 
     // Set up target repository URL
     let targetRepoUrl = inputs[inputNames.targetRepo]
-    if ( inputs[inputNames.targetToken] ) {
-      const repoPath = inputs[inputNames.targetRepo].replace('https://github.com/', '')
-      targetRepoUrl = `https://x-access-token:${inputs[inputNames.targetToken]}@github.com/${repoPath}`
-    }
 
     // Mirror repository
     log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
     await withCwd(clonedRepoPath, async () => {
+      if ( usingToken ) {
+        pushPrepForGitCredentialCache()
+      }
+      
       exec('git', ['push', '--verbose', '--mirror', targetRepoUrl])
 
       // Get last commit hash
@@ -262,7 +304,10 @@ async function main() {
     // Clean up
     log(colorize('🧹 Cleaning up...', colors.yellow));
     if ( usingSsh ) {
-      stopSSHAgent()
+      teardownSSHAgent()
+    }
+    if ( usingToken ) {
+      teardownGitCredentialCache()
     }
     fs.rmSync(clonedRepoPath, { recursive: true, force: true })
   }
