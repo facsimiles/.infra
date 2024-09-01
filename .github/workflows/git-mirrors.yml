@@ -1,6 +1,12 @@
 name: "Git Mirrors"
 
 on:
+  # TODO: `on: push` is only for quick debugging
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/actions/git-mirror/index.js"
   schedule:
     - cron: '0 5 * * *'
   workflow_dispatch:
