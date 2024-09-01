@@ -214,7 +214,7 @@ class SSHCredentialManager extends CredentialManager {
     Object.assign(process.env, match.groups)
     
     log(colorize('🔑 Adding SSH key...', colors.yellow))
-    execFileSync('ssh-add', ['-vvv', '-'], { input: this._secret })
+    exec('ssh-add', ['-vvv', '-'], { input: this._secret })
   
     fs.mkdirSync(SSHCredentialManager._sshDir, { recursive: true })
     this.#appendToSSHConfig('StrictHostKeyChecking', 'no')
@@ -287,38 +287,38 @@ async function main() {
   const inputs = new Inputs()
   let credentialManager = null
 
-  const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), 'cloned-repo-'))
-  fs.chmodSync(clonedRepoPath, 0o700)
+  // Input validation
+  const requiredInputs = [inputNames.sourceRepo, inputNames.targetRepo]
+  for (const input of requiredInputs) {
+    if ( ! inputs[input] ) {
+      prettyPrintEnv((name, value) => name.startsWith('INPUT_'))
+      throw new Error(`Missing required input: \`${input}\``)
+    }
+  }
+
+  if ( ! inputs[inputNames.targetSshKey] === ! inputs[inputNames.targetToken] ) {
+    throw new Error(`Provide either \`${inputNames.targetSshKey}\` or \`${inputNames.targetToken}\` input, not both though.`)
+  }
+
+  const targetRepo = parseAndValidateRepo(inputs[inputNames.targetRepo])
+  if ( ! targetRepo ) {
+    throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${inputs[inputNames.targetRepo]}\``)
+  }
+
+  // Set up credential manager based on provided input
+  if ( inputs[inputNames.targetSshKey] ) {
+    credentialManager = new SSHCredentialManager(targetRepo, inputs[inputNames.targetSshKey])
+    delete inputs[inputNames.targetSshKey]
+  } else if ( inputs[inputNames.targetToken] ) {
+    credentialManager = new GitTokenCredentialManager(targetRepo, inputs[inputNames.targetToken])
+    delete inputs[inputNames.targetToken]
+  } else {
+    assert(false, 'No authentication method provided')
+  }
 
   try {
-    // Input validation
-    const requiredInputs = [inputNames.sourceRepo, inputNames.targetRepo]
-    for (const input of requiredInputs) {
-      if ( ! inputs[input] ) {
-        prettyPrintEnv((name, value) => name.startsWith('INPUT_'))
-        throw new Error(`Missing required input: \`${input}\``)
-      }
-    }
-
-    if ( ! inputs[inputNames.targetSshKey] === ! inputs[inputNames.targetToken] ) {
-      throw new Error(`Provide either \`${inputNames.targetSshKey}\` or \`${inputNames.targetToken}\` input, not both though.`)
-    }
-
-    const targetRepo = parseAndValidateRepo(inputs[inputNames.targetRepo])
-    if ( ! targetRepo ) {
-      throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${inputs[inputNames.targetRepo]}\``)
-    }
-
-    // Set up credential manager based on provided input
-    if ( inputs[inputNames.targetSshKey] ) {
-      credentialManager = new SSHCredentialManager(targetRepo, inputs[inputNames.targetSshKey])
-      delete inputs[inputNames.targetSshKey]
-    } else if ( inputs[inputNames.targetToken] ) {
-      credentialManager = new GitTokenCredentialManager(targetRepo, inputs[inputNames.targetToken])
-      delete inputs[inputNames.targetToken]
-    } else {
-      assert(false, 'No authentication method provided')
-    }
+    const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), `${targetRepo.split('/').join('--')}--`))
+    fs.chmodSync(clonedRepoPath, 0o700)
 
     credentialManager.setupGlobal()
 
