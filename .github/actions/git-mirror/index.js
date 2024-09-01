@@ -47,7 +47,7 @@ class MutexStream extends Writable {
 const mutexStdout = new MutexStream(process.stdout)
 const mutexStderr = new MutexStream(process.stderr)
 
-async function exec(command, args, options = {}) {
+function exec(command, args, options = {}) {
   const backtick = colorize('`', colors.rgb(100))
   const cmd_str = [command, ...args].map(arg =>
     backtick + colorize(arg, colors.rgb(200)) + backtick
@@ -325,7 +325,7 @@ class SSHCredentialManager extends CredentialManager {
     return `git@github.com:${this._repo}.git`
   }
 
-  _addSecret() {
+  async _addSecret() {
     log(colorize('🔐 Setting up SSH agent...', colors.blue))
     const sshAgentOutput = await exec('ssh-agent', ['-s'])
     const match = sshAgentOutput.match(
@@ -348,7 +348,7 @@ class SSHCredentialManager extends CredentialManager {
     fs.appendFileSync(SSHCredentialManager._sshConfigPath, configLine)
   }
 
-  teardownGlobal() {
+  async teardownGlobal() {
     super.teardownGlobal()
     log(colorize('🔒 Stopping SSH agent...', colors.blue))
     if ( process.env.SSH_AGENT_PID ) {
@@ -368,7 +368,7 @@ class GitTokenCredentialManager extends CredentialManager {
     return `https://github.com/${this._repo}.git`
   }
 
-  addSecret() {
+  async addSecret() {
     log(colorize('🔐 Setting up Git credential cache...', colors.blue))
     await exec('git', ['credential-cache', '--daemon'])
 
@@ -377,12 +377,12 @@ class GitTokenCredentialManager extends CredentialManager {
     await exec('git', ['credential-cache', 'store'], { input: gitCredentialInput })
   }
 
-  setupLocal() {
+  async setupLocal() {
     super.setupLocal()
     await exec('git', ['config', '--local', 'credential.helper', 'cache'])
   }
 
-  teardownGlobal() {
+  async teardownGlobal() {
     super.teardownGlobal()
     log(colorize('🔒 Clearing Git credential cache...', colors.blue))
     await exec('git', ['credential-cache', 'exit'])
