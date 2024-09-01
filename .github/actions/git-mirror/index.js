@@ -192,12 +192,12 @@ class CredentialManager {
 }
 
 class SSHCredentialManager extends CredentialManager {
-  static #sshKeyPattern = /^-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/
-  static #sshDir = path.join(os.homedir(), '.ssh')
-  static #sshConfigPath = path.join(SSHCredentialManager.#sshDir, 'config')
+  static _sshKeyPattern = /^-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/
+  static _sshDir = path.join(os.homedir(), '.ssh')
+  static _sshConfigPath = path.join(this._sshDir, 'config')
 
   static _validateSecret(secret) {
-    return this.constructor.#sshKeyPattern.test(secret)
+    return this.constructor._sshKeyPattern.test(secret)
   }
 
   get _remoteUrl() {
@@ -218,13 +218,13 @@ class SSHCredentialManager extends CredentialManager {
     log(colorize('🔑 Adding SSH key...', colors.yellow))
     execFileSync('ssh-add', ['-vvv', '-'], { input: this._secret })
   
-    fs.mkdirSync(this.constructor.#sshDir, { recursive: true })
+    fs.mkdirSync(this.constructor._sshDir, { recursive: true })
     this.#appendToSSHConfig('StrictHostKeyChecking', 'no')
   }
 
   #appendToSSHConfig(key, value) {
     const configLine = `${key}=${value}\n`
-    fs.appendFileSync(this.constructor.#sshConfigPath, configLine)
+    fs.appendFileSync(this.constructor._sshConfigPath, configLine)
   }
 
   teardownGlobal() {
