@@ -58,8 +58,6 @@ const colors = {
 
 const START_TIME = Date.now()
 
-// const GIT_REMOTE_NAME = 'mirror'
-
 ///////////////////////////
 
 function colorize(str, color) {
@@ -172,21 +170,19 @@ class CredentialManager {
     }
   }
 
-  static _validateSecret() { throw new Error('Method not implemented') }
+  static _validateSecret(secret) { throw new Error('Method not implemented') }
+  _addSecret() { throw new Error('Method not implemented') }
   
   setupGlobal() {
     this._addSecret()
     this._secret = ''
   }
 
-  _addSecret() { throw new Error('Method not implemented') }
+  teardownGlobal() { /* Default implementation does nothing */ }
 
-  setupLocal() {
-    // exec('git', ['remote', '--verbose', 'add', '--', GIT_REMOTE_NAME, this.remoteUrl])
-  }
+  setupLocal() { /* Default implementation does nothing */ }
 
   teardownLocal() { /* Default implementation does nothing */ }
-  teardownGlobal() { /* Default implementation does nothing */ }
 }
 
 class SSHCredentialManager extends CredentialManager {
@@ -217,10 +213,10 @@ class SSHCredentialManager extends CredentialManager {
     exec('ssh-add', ['-vvv', '-'], { input: this._secret })
   
     fs.mkdirSync(SSHCredentialManager._sshDir, { recursive: true })
-    this.#appendToSSHConfig('StrictHostKeyChecking', 'no')
+    this._appendToSSHConfig('StrictHostKeyChecking', 'no')
   }
 
-  #appendToSSHConfig(key, value) {
+  _appendToSSHConfig(key, value) {
     const configLine = `${key}=${value}\n`
     fs.appendFileSync(SSHCredentialManager._sshConfigPath, configLine)
   }
