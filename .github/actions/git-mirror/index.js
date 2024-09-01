@@ -327,7 +327,7 @@ class SSHCredentialManager extends CredentialManager {
 
   _addSecret() {
     log(colorize('🔐 Setting up SSH agent...', colors.blue))
-    const sshAgentOutput = exec('ssh-agent', ['-s'])
+    const sshAgentOutput = await exec('ssh-agent', ['-s'])
     const match = sshAgentOutput.match(
       /SSH_AUTH_SOCK=(?<SSH_AUTH_SOCK>[^;]+).*SSH_AGENT_PID=(?<SSH_AGENT_PID>\d+)/s
     )
@@ -337,7 +337,7 @@ class SSHCredentialManager extends CredentialManager {
     Object.assign(process.env, match.groups)
     
     log(colorize('🔑 Adding SSH key...', colors.yellow))
-    exec('ssh-add', ['-vvv', '-'], { input: this._secret })
+    await exec('ssh-add', ['-vvv', '-'], { input: this._secret })
   
     fs.mkdirSync(SSHCredentialManager._sshDir, { recursive: true })
     this._appendToSSHConfig('StrictHostKeyChecking', 'no')
@@ -352,7 +352,7 @@ class SSHCredentialManager extends CredentialManager {
     super.teardownGlobal()
     log(colorize('🔒 Stopping SSH agent...', colors.blue))
     if ( process.env.SSH_AGENT_PID ) {
-      exec('ssh-agent', ['-k'])
+      await exec('ssh-agent', ['-k'])
     }
   }
 }
@@ -370,22 +370,22 @@ class GitTokenCredentialManager extends CredentialManager {
 
   addSecret() {
     log(colorize('🔐 Setting up Git credential cache...', colors.blue))
-    exec('git', ['credential-cache', '--daemon'])
+    await exec('git', ['credential-cache', '--daemon'])
 
     const gitCredentialInput = `protocol=https\nhost=github.com\nusername=x-access-token\npassword=${this._secret}\n`
     log(colorize('🔑 Adding GitHub token...', colors.yellow))
-    exec('git', ['credential-cache', 'store'], { input: gitCredentialInput })
+    await exec('git', ['credential-cache', 'store'], { input: gitCredentialInput })
   }
 
   setupLocal() {
     super.setupLocal()
-    exec('git', ['config', '--local', 'credential.helper', 'cache'])
+    await exec('git', ['config', '--local', 'credential.helper', 'cache'])
   }
 
   teardownGlobal() {
     super.teardownGlobal()
     log(colorize('🔒 Clearing Git credential cache...', colors.blue))
-    exec('git', ['credential-cache', 'exit'])
+    await exec('git', ['credential-cache', 'exit'])
   }
 }
 
@@ -404,8 +404,8 @@ function parseAndValidateRepo(inputRepo) {
 
 
 async function main() {
-  process.stdout._handle.setBlocking(true)
-  process.stderr._handle.setBlocking(true)
+  // process.stdout._handle.setBlocking(true)
+  // process.stderr._handle.setBlocking(true)
   
   const inputs = new Inputs()
   let credentialManager = null
@@ -447,17 +447,17 @@ async function main() {
 
     // Clone source repository
     log(colorize('📥 Cloning source repository...', colors.cyan))
-    exec('git', ['clone', '--verbose', '--mirror', '--', inputs[inputNames.sourceRepo], clonedRepoPath])
+    await exec('git', ['clone', '--verbose', '--mirror', '--', inputs[inputNames.sourceRepo], clonedRepoPath])
 
     // Mirror repository
     log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
     await withCwd(clonedRepoPath, async () => {
       credentialManager.setupLocal()
       
-      exec('git', ['push', '--verbose', '--mirror', '--', credentialManager.remoteUrl])
+      await exec('git', ['push', '--verbose', '--mirror', '--', credentialManager.remoteUrl])
 
       // Get last commit hash
-      const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
+      const lastCommitHash = await exec('git', ['rev-parse', 'HEAD']).trim()
       setOutput(outputNames.headCommitHash, lastCommitHash)
 
       credentialManager.teardownLocal()
