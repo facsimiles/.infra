@@ -143,7 +143,6 @@ function exec(command, args, options = {}) {
   return output
 }
 
-// Function to set output for GitHub Actions
 function setOutput(name, value) {
   const uuid = crypto.randomUUID()
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `${name}<<${uuid}\n${value}\n${uuid}\n`)
@@ -159,7 +158,16 @@ async function withCwd(directory, callback) {
     }
 }
 
-// New function to start SSH agent and add keys
+function validateSSHKey(key) {
+  const sshKeyPattern = /^-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/;
+  return sshKeyPattern.test(key);
+}
+
+function validateGitHubToken(token) {
+  const tokenPattern = /^[a-zA-Z0-9_-]{40}$/;
+  return tokenPattern.test(token);
+}
+
 function setupSSHAgent(targetSshKey) {
   log(colorize('🔐 Setting up SSH agent...', colors.blue))
   const sshAgentOutput = exec('ssh-agent', [
@@ -179,7 +187,6 @@ function setupSSHAgent(targetSshKey) {
   }
 }
 
-// New function to stop SSH agent
 function teardownSSHAgent() {
   log(colorize('🔒 Stopping SSH agent...', colors.blue))
   exec('ssh-agent', [
@@ -253,7 +260,9 @@ async function main() {
 
     // Set up SSH agent if SSH keys are provided
     if ( inputs[inputNames.targetSshKey] ) {
-      // TODO: validate the string looks like a private ssh key
+      if ( ! validateSSHKey(inputs[inputNames.targetSshKey]) ) {
+        throw new Error('Invalid SSH key format')
+      }
       usingSsh = true
       setupSSHAgent(inputs[inputNames.targetSshKey])
       delete inputs[inputNames.targetSshKey]
@@ -262,11 +271,13 @@ async function main() {
     }
 
     // Set up Git credential cache if token is provided
-    if (inputs[inputNames.targetToken]) {
-      // TODO: validate the string looks like a github token
+    if ( inputs[inputNames.targetToken] ) {
+      if ( ! validateGitHubToken(inputs[inputNames.targetToken]) ) {
+        throw new Error('Invalid GitHub token format')
+      }
       usingToken = true
       setupGitCredentialCache(inputs[inputNames.targetToken])
-      delete inputs[inputNames.targetToken] // Remove token from inputs after use
+      delete inputs[inputNames.targetToken]
     }
 
     // Clone source repository
