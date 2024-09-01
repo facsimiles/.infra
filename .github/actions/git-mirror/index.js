@@ -171,7 +171,7 @@ class SSHAgent extends CredentialManager {
   static sshKeyPattern = /^-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----/
 
   static sshDir = path.join(os.homedir(), '.ssh')
-  static sshConfigPath = path.join(SSHAgent.sshDir, 'config')
+  static sshConfigPath = path.join(this.sshDir, 'config')
   
   validateSecret(sshKey) {
     return this.sshKeyPattern.test(sshKey)
@@ -319,8 +319,10 @@ async function main() {
     process.exitCode = 1
     throw error
   } finally {
-    log(colorize('🧹 Cleaning up...', colors.yellow));
-    credentialManager.teardownGlobal()
+    log(colorize('🧹 Cleaning up...', colors.yellow))
+    if ( credentialManager ) {
+      credentialManager.teardownGlobal()
+    }
     fs.rmSync(clonedRepoPath, { recursive: true, force: true })
   }
 }
