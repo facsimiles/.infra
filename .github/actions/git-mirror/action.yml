@@ -6,13 +6,13 @@ inputs:
     description: "URL of the source git repository"
     required: true
   'target-repo':
-    description: "URL of the target GitHub repository"
+    description: "Target GitHub repository as `<owner>/<repo>` or just `<repo>`"
     required: true
   'target-ssh-key':
-    description: "SSH deploy key for the target repository"
+    description: "Private SSH deploy key for the target repository"
     required: false
   'target-token':
-    description: "GitHub Personal Access Token for the target repository"
+    description: "GitHub Token with contents:write permission for the target repository"
     required: false
   'branch':
     description: "Branch to mirror (default: all branches)"
