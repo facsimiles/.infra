@@ -2,7 +2,7 @@ name: "Git Mirror Action"
 description: "Mirrors a git repository to a specified GitHub repository"
 
 inputs:
-  'source-repo':
+  'source-repo-url':
     description: "URL of the source git repository"
     required: true
   'target-repo':
