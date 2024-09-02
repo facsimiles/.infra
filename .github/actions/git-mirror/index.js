@@ -6,14 +6,15 @@ const { execFileSync, spawnSync } = require('child_process')
 
 
 const inputNames = {
-  sourceRepo:   'source-repo',
-  targetRepo:   'target-repo',
+  sourceRepo:   'source-repo-url',
+  targetRepo:   'target-github-repo',
   targetSshKey: 'target-ssh-key',
   targetToken:  'target-token',
 }
 
 const outputNames = {
-  headCommitHash: 'head-commit-hash',
+  targetGithubRepo: 'target-github-repo',
+  headCommitHash:   'head-commit-hash',
 }
 
 // ANSI color codes
@@ -302,7 +303,7 @@ async function main() {
   if ( ! targetRepo ) {
     throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${inputs[inputNames.targetRepo]}\``)
   }
-  setOutput('target-repo', targetRepo)
+  setOutput(outputNames.targetGithubRepo, targetRepo)
 
   // Set up credential manager based on provided input
   if ( inputs[inputNames.targetSshKey] ) {
