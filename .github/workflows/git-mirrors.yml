@@ -75,9 +75,8 @@ jobs:
         with:
           'source-repo-url':     ${{ vars['SOURCE_REPO_URL'] }}
           'target-github-repo':  ${{ vars['TARGET_GITHUB_REPO'] || fromJSON(matrix['json'])['name'] }}
-          # 'target-ssh-key':      ${{ secrets['TARGET_SSH_KEY'] }}
-          # 'target-token':        ${{ secrets['TARGET_TOKEN'] }}
-          'target-token':        ${{ steps['app-token'].outputs['token'] }}
+          'target-ssh-key':      ${{ secrets['TARGET_SSH_KEY'] }}
+          'target-token':        ${{ secrets['TARGET_TOKEN'] || steps['app-token'].outputs['token'] }}
 
       - name: "Log mirroring step metadata"
         if: ${{ always() }}
