@@ -40,15 +40,13 @@ jobs:
       - id: 'mirror'
         uses: './.github/actions/git-mirror'
         with:
-          'source-repo':    ${{ vars['SOURCE_REPO'] }}
-          'target-repo':    ${{ vars['TARGET_REPO'] || fromJSON(matrix['json'])['name'] }}
-          'branch':         ${{ vars['BRANCH'] }}
-          'target-ssh-key': ${{ secrets['TARGET_SSH_KEY'] }}
-          'target-token':   ${{ secrets['TARGET_TOKEN'] }}
+          'source-repo-url':     ${{ vars['SOURCE_REPO_URL'] }}
+          'target-github-repo':  ${{ vars['TARGET_GITHUB_REPO'] || fromJSON(matrix['json'])['name'] }}
+          'target-ssh-key':      ${{ secrets['TARGET_SSH_KEY'] }}
+          'target-token':        ${{ secrets['TARGET_TOKEN'] }}
 
       - name: "Log mirroring results"
         run: |
-          echo "Source repo path:  ${{ steps['mirror'].outputs['source-repo-path']  }}"
-          echo "Target repo path:  ${{ steps['mirror'].outputs['target-repo-path']  }}"
-          echo "Mirrored branches: ${{ steps['mirror'].outputs['mirrored-branches'] }}"
-          echo "Last commit hash:  ${{ steps['mirror'].outputs['last-commit-hash']  }}"
+          echo "Source repo URL:     ${{ steps['mirror'].outputs['source-repo-url']  }}"
+          echo "Target GitHub repo:  ${{ steps['mirror'].outputs['target-github-repo']  }}"
+          echo "Last commit hash:    ${{ steps['mirror'].outputs['last-commit-hash']  }}"
