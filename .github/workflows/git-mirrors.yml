@@ -45,9 +45,9 @@ jobs:
           'target-ssh-key':      ${{ secrets['TARGET_SSH_KEY'] }}
           'target-token':        ${{ secrets['TARGET_TOKEN'] }}
 
-      - name: "Log mirroring results"
+      - name: "Log mirroring step metadata"
         shell: bash
         run: |
-          echo "${OUTPUTS_JSON}" | jq -C .
+          echo "${MIRROR_STEP_JSON}" | jq -C .
         env:
-          OUTPUTS_JSON: ${{ toJSON(steps['mirror'].outputs) }}
+          MIRROR_STEP_JSON: ${{ toJSON(steps['mirror']) }}
