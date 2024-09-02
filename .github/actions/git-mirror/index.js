@@ -108,7 +108,7 @@ function log(message) {
   
   const elapsedStr = [
     colorize("[", colors.rgb(170)),
-    colorize("+", colors.blue),
+    colorize("+", colors.rgb(130)),
     `${seconds}`,
     colorize(".", colors.blue),
     `${milliseconds}`,
