@@ -5,139 +5,6 @@ const path   = require('path')
 const { execFileSync, spawnSync } = require('child_process')
 
 
-
-
-const { Writable } = require('stream')
-const { spawn } = require('child_process')
-const { promisify } = require('util')
-const finished = promisify(require('stream').finished)
-
-class Mutex {
-  constructor() {
-    this._locking = Promise.resolve()
-  }
-
-  lock() {
-    let unlock
-    const willLock = new Promise(resolve => { unlock = resolve })
-    const willUnlock = this._locking.then(() => willLock)
-    this._locking = willUnlock
-    return willUnlock.then(() => unlock)
-  }
-}
-
-const mutex = new Mutex()
-
-class MutexStream extends Writable {
-  constructor(stream) {
-    super()
-    this._stream = stream
-  }
-
-  write(chunk, encoding, callback) {
-    mutex.lock().then(unlock => {
-      this._stream.write(chunk, encoding, err => {
-        unlock()
-        callback(err)
-      })
-    })
-  }
-}
-
-const mutexStdout = new MutexStream(process.stdout)
-const mutexStderr = new MutexStream(process.stderr)
-
-async function exec(command, args, options = {}) {
-  const backtick = colorize('`', colors.rgb(100))
-  const cmd_str = [command, ...args].map(arg =>
-    backtick + colorize(arg, colors.rgb(200)) + backtick
-  ).join(' ')
-  log(colorize(`🚀 Executing command: `, colors.magenta) + cmd_str)
-
-  // Handle stdio options
-  let stdio = ['pipe', 'pipe', 'inherit']
-  if (options.stdio) {
-    if (typeof options.stdio === 'string') {
-      stdio = [options.stdio, options.stdio, options.stdio]
-    } else if (Array.isArray(options.stdio)) {
-      stdio = options.stdio
-    }
-    delete options.stdio
-  }
-
-  const child = spawn(command, args, {
-    encoding: 'utf8',
-    ...options,
-    stdio: [
-      stdio[0],
-      stdio[1] === 'inherit' ? 'pipe' : stdio[1],
-      stdio[2] === 'inherit' ? 'pipe' : stdio[2],
-    ],
-  })
-  // console.log({stdout: child.stdout, stderr: child.stderr})
-  console.log({spawnargs: child.spawnargs})
-
-  let stdout = ''
-  let stderr = ''
-
-  if (stdio[1] === 'inherit') {
-    child.stdout.pipe(mutexStdout, { end: false })
-  } else if (stdio[1] === 'pipe') {
-    child.stdout.on('data', (data) => {
-      stdout += data
-    })
-  }
-
-  if (stdio[2] === 'inherit') {
-    child.stderr.pipe(mutexStderr, { end: false })
-  } else if (stdio[2] === 'pipe') {
-    child.stderr.on('data', (data) => {
-      stderr += data
-    })
-  }
-
-  return await new Promise((resolve, reject) => {
-    child.on('close', (code) => {
-      if (code !== 0) {
-        const error = new Error(`Command failed with exit code ${code}`)
-        error.code = code
-        error.stdout = stdout
-        error.stderr = stderr
-        reject(error)
-      } else {
-        resolve(stdout)
-      }
-    })
-
-    child.on('error', reject)
-  })
-}
-
-function log(message) {
-  function formatNum(prefix, num, suffix, len) {
-    const str = num ? num.toString() : ''
-    return colorize("0", colors.rgb(60)).repeat(len - str.length) + prefix + str + suffix
-  }
-  const elapsed = Date.now() - START_TIME
-  const seconds = formatNum(colors.rgb(130, 100, 220), Math.floor(elapsed / 1000), colors.reset, 3)
-  const milliseconds = formatNum(colors.rgb(100, 130, 255), elapsed % 1000, colors.reset, 3)
-  
-  const elapsedStr = [
-    colorize("[", colors.rgb(170)),
-    colorize("+", colors.blue),
-    `${seconds}`,
-    colorize(".", colors.blue),
-    `${milliseconds}`,
-    colorize("ms", colors.rgb(130)),
-    colorize("]", colors.rgb(170)),
-  ].join('')
-
-  mutexStdout.write(`${elapsedStr} ${colorize(message, colors.reset)}\n`)
-}
-
-
-
-
 const inputNames = {
   sourceRepo:   'source-repo',
   targetRepo:   'target-repo',
@@ -197,6 +64,10 @@ function colorize(str, color) {
   return `${color}${str}${colors.reset}`
 }
 
+async function sleep(seconds) {
+    return await new Promise(resolve => setTimeout(resolve, seconds * 1000))
+}
+
 // Class to handle inputs using Proxy
 class Inputs {
   #toEnvVarName(prop) {
@@ -217,28 +88,27 @@ class Inputs {
   }
 }
 
-// Logging function with colors and emojis
-// function log(message) {
-//   function formatNum(prefix, num, suffix, len) {
-//     const str = num ? num.toString() : ''
-//     return colorize("0", colors.rgb(60)).repeat(len - str.length) + prefix + str + suffix
-//   }
-//   const elapsed = Date.now() - START_TIME
-//   const seconds = formatNum(colors.rgb(130, 100, 220), Math.floor(elapsed / 1000), colors.reset, 3)
-//   const milliseconds = formatNum(colors.rgb(100, 130, 255), elapsed % 1000, colors.reset, 3)
+function log(message) {
+  function formatNum(prefix, num, suffix, len) {
+    const str = num ? num.toString() : ''
+    return colorize("0", colors.rgb(60)).repeat(len - str.length) + prefix + str + suffix
+  }
+  const elapsed = Date.now() - START_TIME
+  const seconds = formatNum(colors.rgb(130, 100, 220), Math.floor(elapsed / 1000), colors.reset, 3)
+  const milliseconds = formatNum(colors.rgb(100, 130, 255), elapsed % 1000, colors.reset, 3)
   
-//   const elapsedStr = [
-//     colorize("[", colors.rgb(170)),
-//     colorize("+", colors.blue),
-//     `${seconds}`,
-//     colorize(".", colors.blue),
-//     `${milliseconds}`,
-//     colorize("ms", colors.rgb(130)),
-//     colorize("]", colors.rgb(170)),
-//   ].join('')
+  const elapsedStr = [
+    colorize("[", colors.rgb(170)),
+    colorize("+", colors.blue),
+    `${seconds}`,
+    colorize(".", colors.blue),
+    `${milliseconds}`,
+    colorize("ms", colors.rgb(130)),
+    colorize("]", colors.rgb(170)),
+  ].join('')
 
-//   console.log(`${elapsedStr} ${colorize(message, colors.reset)}`)
-// }
+  console.log(`${elapsedStr} ${colorize(message, colors.reset)}`)
+}
 
 function prettyPrintEnv(filterCallback) {
   console.log(colorize("Environment Variables:", `${colors.bold}${colors.underline}${colors.blue}`))
@@ -260,20 +130,22 @@ function prettyPrintEnv(filterCallback) {
   }
 }
 
-// Function to execute shell commands
-// function exec(command, args, options = {}) {
-//   const backtick = colorize('`', colors.rgb(100))
-//   const cmd_str = [command, ...args].map(arg =>
-//     backtick + colorize(arg, colors.rgb(200)) + backtick
-//   ).join(' ')
-//   log(colorize(`🚀 Executing command: `, colors.magenta) + cmd_str)
-//   const output = execFileSync(command, args, {
-//     encoding: 'utf8',
-//     stdio: ['pipe', 'pipe', 'inherit'],
-//     ...options
-//   })
-//   return output
-// }
+function exec(command, args, options = {}) {
+  const backtick = colorize('`', colors.rgb(100))
+  const cmd_str = [command, ...args].map(arg =>
+    backtick + colorize(arg, colors.rgb(200)) + backtick
+  ).join(' ')
+  log(colorize(`🚀 Executing command: `, colors.magenta) + cmd_str)
+  const output = execFileSync(command, args, {
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', 'inherit'],
+    ...options
+  })
+
+  sleep(0.1) // wait for 'inherit' stdout/stderr to finish printing
+  
+  return output
+}
 
 function setOutput(name, value) {
   const uuid = crypto.randomUUID()
@@ -410,9 +282,6 @@ function parseAndValidateRepo(inputRepo) {
 
 
 async function main() {
-  // process.stdout._handle.setBlocking(true)
-  // process.stderr._handle.setBlocking(true)
-  
   const inputs = new Inputs()
   let credentialManager = null
 
