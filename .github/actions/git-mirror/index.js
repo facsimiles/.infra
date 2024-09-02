@@ -144,7 +144,7 @@ function exec(command, args, options = {}) {
     ...options
   })
 
-  sleep(0.1) // wait for 'inherit' stdout/stderr to finish printing
+  sleep(0.2) // wait for 'inherit' stdout/stderr to finish printing
   
   return output
 }
