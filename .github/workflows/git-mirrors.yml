@@ -50,16 +50,18 @@ jobs:
         id: 'get-bot-user-id'
         uses: 'actions/github-script@v7'
         with:
-          # github-token: ${{ steps['app-token'].outputs['token'] }}
           script: |
+            const [appSlug, outputName] = [process.env['app-slug'], process.env['output-name']]
+            if ( ! appSlug || ! outputName ) throw new Error("Missing env vars")
             github.rest.users.getByUsername({
-              username: `${process.env['app-slug']}[bot]`
+              username: `${appSlug}[bot]`
             })
             .then(response => {
-              core.setOutput('bot-user-id', response.data.id)
+              core.setOutput(outputName, response.data.id)
             })
         env:
           app-slug: ${{ steps['app-token'].outputs['app-slug'] }}
+          output-name: 'bot-user-id'
 
       - name: "Set Up the GitHub App / Bot as a Git User"
         shell: bash --noprofile --norc -euo pipefail -x  {0}
