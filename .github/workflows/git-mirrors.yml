@@ -46,6 +46,7 @@ jobs:
           'target-token':        ${{ secrets['TARGET_TOKEN'] }}
 
       - name: "Log mirroring step metadata"
+        if: ${{ always() }}
         shell: bash
         run: |
           echo "${MIRROR_STEP_JSON}" | jq -C .
