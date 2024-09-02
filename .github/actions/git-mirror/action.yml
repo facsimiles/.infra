@@ -14,10 +14,6 @@ inputs:
   'target-token':
     description: "GitHub Token with contents:write permission for the target repository"
     required: false
-  'branch':
-    description: "Branch to mirror (default: all branches)"
-    required: false
-    default: '--all'
 
 outputs:
   'source-repo-path':
