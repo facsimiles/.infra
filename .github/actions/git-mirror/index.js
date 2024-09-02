@@ -185,7 +185,7 @@ class CredentialManager {
   }
 
   _validateSecret(secret) { throw new Error('Method not implemented') }
-  async _addSecret() { throw new Error('Method not implemented') }
+  _addSecret() { throw new Error('Method not implemented') }
   
   setupGlobal() {
     this._addSecret()
@@ -255,7 +255,7 @@ class GitTokenCredentialManager extends CredentialManager {
     return `https://github.com/${this._repo}.git`
   }
 
-  addSecret() {
+  _addSecret() {
     log(colorize('🔐 Setting up Git credential cache...', colors.blue))
     exec('git', ['credential-cache', '--daemon'])
 
