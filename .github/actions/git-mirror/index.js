@@ -257,7 +257,7 @@ class GitTokenCredentialManager extends CredentialManager {
 
   _addSecret() {
     log(colorize('🔐 Setting up Git credential cache...', colors.blue))
-    exec('git', ['credential-cache', '--daemon'])
+    // exec('git', ['credential-cache', '--daemon'])
 
     const gitCredentialInput = `protocol=https\nhost=github.com\nusername=x-access-token\npassword=${this._secret}\n`
     log(colorize('🔑 Adding GitHub token...', colors.yellow))
