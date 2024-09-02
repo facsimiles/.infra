@@ -24,7 +24,7 @@ jobs:
               "name": "beautifulsoup"
             }
 
-    name: "Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
+    name: "🪞 Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
     environment:
       name: "${{ format('mirror--{0}', fromJSON(matrix['json'])['name']) }}"
@@ -36,9 +36,12 @@ jobs:
 
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@main'
+      - name: "📥 Checkout"
+        uses: 'actions/checkout@main'
+        
 
-      - uses: 'actions/create-github-app-token@v1'
+      - name: "🔑 Create GitHub App Token"
+        uses: 'actions/create-github-app-token@v1'
         id: 'app-token'
         with:
           'app-id': ${{ vars['PUSH_APP_ID'] }}
@@ -46,7 +49,7 @@ jobs:
           'owner': ${{ github.repository_owner }}
           'repositories': "${{ fromJSON(matrix['json'])['name'] }}"
 
-      - name: "Get GitHub App / Bot User ID"
+      - name: "🆔 Get GitHub App / Bot User ID"
         id: 'get-bot-user-id'
         uses: 'actions/github-script@v7'
         with:
@@ -63,7 +66,7 @@ jobs:
           app-slug: ${{ steps['app-token'].outputs['app-slug'] }}
           output-name: 'bot-user-id'
 
-      - name: "Set Up the GitHub App / Bot as a Git User"
+      - name: "👤 Set Up the GitHub App / Bot as a Git User"
         shell: bash --noprofile --norc -euo pipefail -x  {0}
         run: |
           git config --global  user.name   "${APP_SLUG}[bot]"
@@ -72,7 +75,8 @@ jobs:
           APP_SLUG:    ${{ steps['app-token'].outputs['app-slug'] }}
           BOT_USER_ID: ${{ steps['get-bot-user-id'].outputs['bot-user-id'] }}
       
-      - id: 'mirror'
+      - name: "🔄 Mirror Repository"
+        id: 'mirror'
         uses: './.github/actions/git-mirror'
         with:
           'source-repo-url':     ${{ vars['SOURCE_REPO_URL'] }}
@@ -80,7 +84,7 @@ jobs:
           'target-ssh-key':      ${{ secrets['TARGET_SSH_KEY'] }}
           'target-token':        ${{ secrets['TARGET_TOKEN'] || steps['app-token'].outputs['token'] }}
 
-      - name: "Log mirroring step metadata"
+      - name: "📝 Log Mirroring Step Metadata"
         if: ${{ always() }}
         shell: bash
         run: |
