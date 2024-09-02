@@ -302,6 +302,7 @@ async function main() {
   if ( ! targetRepo ) {
     throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${inputs[inputNames.targetRepo]}\``)
   }
+  setOutput('target-repo', targetRepo)
 
   // Set up credential manager based on provided input
   if ( inputs[inputNames.targetSshKey] ) {
