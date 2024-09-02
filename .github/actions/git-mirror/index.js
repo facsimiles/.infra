@@ -66,8 +66,8 @@ function colorize(str, color) {
   return `${color}${str}${colors.reset}`
 }
 
-async function sleep(seconds) {
-    return await new Promise(resolve => setTimeout(resolve, seconds * 1000))
+function sleep(seconds) {
+    return new Promise(resolve => setTimeout(resolve, seconds * 1000))
 }
 
 // Class to handle inputs using Proxy
@@ -132,7 +132,7 @@ function prettyPrintEnv(filterCallback) {
   }
 }
 
-function exec(command, args, options = {}) {
+async function exec(command, args, options = {}) {
   const backtick = colorize('`', colors.rgb(100))
   const cmd_str = [command, ...args].map(arg =>
     backtick + colorize(arg, colors.rgb(200)) + backtick
@@ -144,7 +144,7 @@ function exec(command, args, options = {}) {
     ...options
   })
 
-  sleep(0.2) // wait for 'inherit' stdout/stderr to finish printing
+  await sleep(0.1) // wait for 'inherit' stdout/stderr to finish printing
   
   return output
 }
