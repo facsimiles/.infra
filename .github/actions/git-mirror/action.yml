@@ -5,7 +5,7 @@ inputs:
   'source-repo-url':
     description: "URL of the source git repository"
     required: true
-  'target-repo':
+  'target-github-repo':
     description: "Target GitHub repository as `<owner>/<repo>` or just `<repo>`"
     required: true
   'target-ssh-key':
