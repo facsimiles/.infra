@@ -347,14 +347,15 @@ async function main() {
 
     // Clone source repository
     log(colorize('📥 Cloning source repository...', colors.cyan))
-    exec('git', ['clone', '--progress', '--mirror', '--', inputs[inputNames.sourceRepo], clonedRepoPath])
+    // NOTE: never use `--progress` for `git clone -mirror`, it will make it several orders of magnitude slower
+    exec('git', ['clone', '--verbose', '--mirror', '--', inputs[inputNames.sourceRepo], clonedRepoPath])
 
     // Mirror repository
     log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
     await withCwd(clonedRepoPath, async () => {
       credentialManager.setupLocal()
       
-      exec('git', ['push', '--verbose', '--mirror', '--', credentialManager.remoteUrl])
+      exec('git', ['push', '--verbose', '--progress', '--mirror', '--', credentialManager.remoteUrl])
 
       // Get last commit hash
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
