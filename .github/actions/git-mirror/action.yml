@@ -16,12 +16,8 @@ inputs:
     required: false
 
 outputs:
-  'source-repo-path':
-    description: "Resolved path of the source repository"
-  'target-repo-path':
-    description: "Resolved path of the target repository"
-  'mirrored-branches':
-    description: "List of branches that were mirrored"
+  'target-repo':
+    description: "Full target repo name/path."
   'last-commit-hash':
     description: "Hash of the last mirrored commit"
 
