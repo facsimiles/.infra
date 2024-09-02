@@ -172,7 +172,7 @@ async function withCwd(directory, callback) {
 }
 
 class CredentialManager {
-  _repo
+  repo
   _secret
   get remoteUrl() { throw new Error('Method not implemented') }
   
@@ -181,8 +181,7 @@ class CredentialManager {
     if ( ! this.repo ) {
       throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${repo}\``)
     }
-    
-    this._repo = repo
+
     this._secret = secret
     if ( ! this.constructor._validateSecret(secret) ) {
       throw new Error('Invalid secret format')
@@ -227,7 +226,7 @@ class SSHCredentialManager extends CredentialManager {
   }
 
   get remoteUrl() {
-    return `git@github.com:${this._repo}.git`
+    return `git@github.com:${this.repo}.git`
   }
 
   _addSecret() {
@@ -270,7 +269,7 @@ class GitTokenCredentialManager extends CredentialManager {
   }
 
   get _remoteUrlPath() {
-    return `/${this._repo}.git`
+    return `/${this.repo}.git`
   }
 
   get remoteUrl() {
