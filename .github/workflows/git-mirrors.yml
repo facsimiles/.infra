@@ -37,13 +37,47 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: 'actions/checkout@main'
+
+      - uses: 'actions/create-github-app-token@v1'
+        id: 'app-token'
+        with:
+          'app-id': ${{ vars['PUSH_APP_ID'] }}
+          'private-key': ${{ secrets['PUSH_APP_PRIVATE_KEY'] }}
+          'owner': ${{ github.repository_owner }}
+          'repositories': "${{ fromJSON(matrix['json'])['name'] }}"
+
+      - name: "Get GitHub App / Bot User ID"
+        id: 'get-bot-user-id'
+        uses: 'actions/github-script@v7'
+        with:
+          # github-token: ${{ steps['app-token'].outputs['token'] }}
+          script: |
+            github.rest.users.getByUsername({
+              username: `${process.env['app-slug']}[bot]`
+            })
+            .then(response => {
+              core.setOutput('bot-user-id', response.data.id)
+            })
+        env:
+          app-slug: ${{ steps['app-token'].outputs['app-slug'] }}
+
+      - name: "Set Up the GitHub App / Bot as a Git User"
+        shell: bash --noprofile --norc -euo pipefail -x
+        run: |
+          git config --global  user.name   "${APP_SLUG}[bot]"
+          git config --global  user.email  "${BOT_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
+        env:
+          APP_SLUG:    ${{ steps['app-token'].outputs['app-slug'] }}
+          BOT_USER_ID: ${{ steps['get-bot-user-id'].outputs['bot-user-id'] }}
+      
       - id: 'mirror'
         uses: './.github/actions/git-mirror'
         with:
           'source-repo-url':     ${{ vars['SOURCE_REPO_URL'] }}
           'target-github-repo':  ${{ vars['TARGET_GITHUB_REPO'] || fromJSON(matrix['json'])['name'] }}
-          'target-ssh-key':      ${{ secrets['TARGET_SSH_KEY'] }}
-          'target-token':        ${{ secrets['TARGET_TOKEN'] }}
+          # 'target-ssh-key':      ${{ secrets['TARGET_SSH_KEY'] }}
+          # 'target-token':        ${{ secrets['TARGET_TOKEN'] }}
+          'target-token':        ${{ steps['app-token'].outputs['token'] }}
 
       - name: "Log mirroring step metadata"
         if: ${{ always() }}
