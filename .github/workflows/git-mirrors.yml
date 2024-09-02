@@ -49,4 +49,4 @@ jobs:
         run: |
           echo "Source repo URL:     ${{ steps['mirror'].outputs['source-repo-url']  }}"
           echo "Target GitHub repo:  ${{ steps['mirror'].outputs['target-github-repo']  }}"
-          echo "Last commit hash:    ${{ steps['mirror'].outputs['last-commit-hash']  }}"
+          echo "HEAD commit hash:    ${{ steps['mirror'].outputs['head-commit-hash']  }}"
