@@ -70,6 +70,13 @@ function sleep(seconds) {
     return new Promise(resolve => setTimeout(resolve, seconds * 1000))
 }
 
+function sleepSync(seconds) {
+    const start = Date.now()
+    while (Date.now() - start < seconds * 1000) {
+        // Busy-wait loop
+    }
+}
+
 // Class to handle inputs using Proxy
 class Inputs {
   #toEnvVarName(prop) {
@@ -132,7 +139,7 @@ function prettyPrintEnv(filterCallback) {
   }
 }
 
-async function exec(command, args, options = {}) {
+function exec(command, args, options = {}) {
   const backtick = colorize('`', colors.rgb(100))
   const cmd_str = [command, ...args].map(arg =>
     backtick + colorize(arg, colors.rgb(200)) + backtick
@@ -144,7 +151,7 @@ async function exec(command, args, options = {}) {
     ...options
   })
 
-  await sleep(0.1) // wait for 'inherit' stdout/stderr to finish printing
+  sleepSync(0.1) // wait for 'inherit' stdout/stderr to finish printing
   
   return output
 }
