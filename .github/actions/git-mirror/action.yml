@@ -16,7 +16,7 @@ inputs:
     required: false
 
 outputs:
-  'target-repo':
+  'target-github-repo':
     description: "Full target repo name/path."
   'last-commit-hash':
     description: "Hash of the last mirrored commit"
