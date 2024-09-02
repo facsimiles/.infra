@@ -16,6 +16,8 @@ inputs:
     required: false
 
 outputs:
+  'source-repo-url':
+    description: "URL of the source git repository"
   'target-github-repo':
     description: "Full target repo name/path."
   'last-commit-hash':
