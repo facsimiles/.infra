@@ -13,7 +13,8 @@ const inputNames = {
 }
 
 const outputNames = {
-  targetGithubRepo: 'target-github-repo',
+  sourceRepo:       inputNames.sourceRepo,
+  targetRepo:       inputNames.targetRepo,
   headCommitHash:   'head-commit-hash',
 }
 
@@ -294,6 +295,7 @@ async function main() {
       throw new Error(`Missing required input: \`${input}\``)
     }
   }
+  setOutput(outputNames.sourceRepo, inputs[inputNames.sourceRepo])
 
   if ( ! inputs[inputNames.targetSshKey] === ! inputs[inputNames.targetToken] ) {
     throw new Error(`Provide either \`${inputNames.targetSshKey}\` or \`${inputNames.targetToken}\` input, not both though.`)
@@ -303,7 +305,7 @@ async function main() {
   if ( ! targetRepo ) {
     throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${inputs[inputNames.targetRepo]}\``)
   }
-  setOutput(outputNames.targetGithubRepo, targetRepo)
+  setOutput(outputNames.targetRepo, targetRepo)
 
   // Set up credential manager based on provided input
   if ( inputs[inputNames.targetSshKey] ) {
