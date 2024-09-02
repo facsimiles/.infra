@@ -347,7 +347,7 @@ async function main() {
 
     // Clone source repository
     log(colorize('📥 Cloning source repository...', colors.cyan))
-    exec('git', ['clone', '--verbose', '--mirror', '--', inputs[inputNames.sourceRepo], clonedRepoPath])
+    exec('git', ['clone', '--progress', '--mirror', '--', inputs[inputNames.sourceRepo], clonedRepoPath])
 
     // Mirror repository
     log(colorize('🔄 Mirroring repository...', colors.rgb(20, 230, 255)))
