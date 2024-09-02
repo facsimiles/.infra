@@ -177,6 +177,11 @@ class CredentialManager {
   get remoteUrl() { throw new Error('Method not implemented') }
   
   constructor(repo, secret) {
+    this.repo = CredentialManager.parseAndValidateRepo(repo)
+    if ( ! this.repo ) {
+      throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${repo}\``)
+    }
+    
     this._repo = repo
     this._secret = secret
     if ( ! this.constructor._validateSecret(secret) ) {
@@ -184,6 +189,19 @@ class CredentialManager {
     }
   }
 
+  static parseAndValidateRepo(inputRepo) {
+    const repoRegex = /^(?:(?<owner>[a-zA-Z0-9_.-]+)\/)?(?<repo>[a-zA-Z0-9_.-]+)$/
+    const match = inputRepo.match(repoRegex)
+    if ( ! match ) {
+      return ''
+    }
+  
+    const owner = match.groups.owner || process.env.GITHUB_REPOSITORY_OWNER
+    const repo = match.groups.repo
+  
+    return `${owner}/${repo}`
+  }
+  
   _validateSecret(secret) { throw new Error('Method not implemented') }
   _addSecret() { throw new Error('Method not implemented') }
   
@@ -251,14 +269,27 @@ class GitTokenCredentialManager extends CredentialManager {
     return GitTokenCredentialManager._tokenPattern.test(secret)
   }
 
+  get _remoteUrlPath() {
+    return `/${this._repo}.git`
+  }
+
   get remoteUrl() {
-    return `https://github.com/${this._repo}.git`
+    return `https://github.com${this._remoteUrlPath}`
   }
 
   _addSecret() {
     log(colorize('🔐 Setting up Git credential cache...', colors.blue))
 
-    const gitCredentialInput = `protocol=https\nhost=github.com\nusername=x-access-token\npassword=${this._secret}\n`
+    const gitCredentialInputObject = {
+      protocol: 'https',
+      host:     'github.com',
+      path:     this._remoteUrlPath,
+      username: 'x-access-token',
+      password: this._secret,
+    }
+    const gitCredentialInput = Object.entries(gitCredentialInputObject)
+      .map(([key, val]) => `${key}=${val}\n`)
+      .join('')
 
     log(colorize('🔑 Adding GitHub token...', colors.yellow))
     exec('git', ['credential-cache', 'store'], { input: gitCredentialInput })
@@ -274,19 +305,6 @@ class GitTokenCredentialManager extends CredentialManager {
     log(colorize('🔒 Clearing Git credential cache...', colors.blue))
     exec('git', ['credential-cache', 'exit'])
   }
-}
-
-function parseAndValidateRepo(inputRepo) {
-  const repoRegex = /^(?:(?<owner>[a-zA-Z0-9_.-]+)\/)?(?<repo>[a-zA-Z0-9_.-]+)$/
-  const match = inputRepo.match(repoRegex)
-  if ( ! match ) {
-    return ''
-  }
-
-  const owner = match.groups.owner || process.env.GITHUB_REPOSITORY_OWNER
-  const repo = match.groups.repo
-
-  return `${owner}/${repo}`
 }
 
 
@@ -308,22 +326,19 @@ async function main() {
     throw new Error(`Provide either \`${inputNames.targetSshKey}\` or \`${inputNames.targetToken}\` input, not both though.`)
   }
 
-  const targetRepo = parseAndValidateRepo(inputs[inputNames.targetRepo])
-  if ( ! targetRepo ) {
-    throw new Error(`Invalid \`${inputNames.targetRepo}\` input. Received: \`${inputs[inputNames.targetRepo]}\``)
-  }
-  setOutput(outputNames.targetRepo, targetRepo)
-
   // Set up credential manager based on provided input
   if ( inputs[inputNames.targetSshKey] ) {
-    credentialManager = new SSHCredentialManager(targetRepo, inputs[inputNames.targetSshKey])
+    credentialManager = new SSHCredentialManager(inputs[inputNames.targetRepo], inputs[inputNames.targetSshKey])
     delete inputs[inputNames.targetSshKey]
   } else if ( inputs[inputNames.targetToken] ) {
-    credentialManager = new GitTokenCredentialManager(targetRepo, inputs[inputNames.targetToken])
+    credentialManager = new GitTokenCredentialManager(inputs[inputNames.targetRepo], inputs[inputNames.targetToken])
     delete inputs[inputNames.targetToken]
   } else {
     assert(false, 'No authentication method provided')
   }
+
+  const targetRepo = credentialManager.repo
+  setOutput(outputNames.targetRepo, targetRepo)
 
   const clonedRepoPath = fs.mkdtempSync(path.join(os.homedir(), `${targetRepo.split('/').join('--')}--`))
   fs.chmodSync(clonedRepoPath, 0o700)
