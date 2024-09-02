@@ -20,8 +20,8 @@ outputs:
     description: "URL of the source git repository"
   'target-github-repo':
     description: "Full target repo name/path."
-  'last-commit-hash':
-    description: "Hash of the last mirrored commit"
+  'head-commit-hash':
+    description: "Hash of the currently mirrored HEAD commit"
 
 runs:
   using: 'node20'
