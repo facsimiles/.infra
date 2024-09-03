@@ -9,7 +9,7 @@ on:
       - ".github/actions/git-mirror/index.js"
       - ".github/workflows/git-mirrors.yml"
   schedule:
-    - cron: '0 5 * * *'
+    - cron: '44 * * * *'
   workflow_dispatch:
 
 jobs:
