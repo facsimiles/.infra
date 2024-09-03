@@ -7,6 +7,7 @@ on:
       - master
     paths:
       - ".github/actions/git-mirror/index.js"
+      - ".github/workflows/git-mirrors.yml"
   schedule:
     - cron: '0 5 * * *'
   workflow_dispatch:
@@ -41,6 +42,7 @@ jobs:
         uses: 'actions-rindeal/git-remote-ref-compare@master'
         with:
           'source-repo-url': ${{ vars['SOURCE_REPO_URL'] }}
+          # TODO: refactor the repo/url processing from the action's index.js into a separate step and then use its outputs here and in the mirroring action
           'target-repo-url': https://github.com/facsimiles/${{ vars['TARGET_GITHUB_REPO'] || fromJSON(matrix['json'])['name'] }}.git
         env:
           'RUNNER_DEBUG': '1'
