@@ -42,6 +42,8 @@ jobs:
         with:
           'source-repo-url': ${{ vars['SOURCE_REPO_URL'] }}
           'target-repo-url': https://github.com/facsimiles/${{ vars['TARGET_GITHUB_REPO'] || fromJSON(matrix['json'])['name'] }}.git
+        env:
+          'RUNNER_DEBUG': '1'
           
       - name: "📥 Checkout"
         if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
