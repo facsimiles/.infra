@@ -36,11 +36,22 @@ jobs:
 
     runs-on: 'ubuntu-latest'
     steps:
+      - name: "Verify Remote Git Refs Equality"
+        id: 'verify-refs'
+        uses: 'actions-rindeal/git-remote-ref-compare@master'
+        with:
+          'source-repo-url': ${{ vars['SOURCE_REPO_URL'] }}
+          'target-repo-url': https://github.com/facsimiles/${{ vars['TARGET_GITHUB_REPO'] || fromJSON(matrix['json'])['name'] }}.git
+      
+      - name: "Mirror Repositories"
+        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
+    
       - name: "📥 Checkout"
+        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         uses: 'actions/checkout@main'
-        
 
       - name: "🔑 Create GitHub App Token"
+        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         uses: 'actions/create-github-app-token@v1'
         id: 'app-token'
         with:
@@ -50,6 +61,7 @@ jobs:
           'repositories': "${{ fromJSON(matrix['json'])['name'] }}"
 
       - name: "🆔 Get GitHub App / Bot User ID"
+        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         id: 'get-bot-user-id'
         uses: 'actions/github-script@v7'
         with:
@@ -67,6 +79,7 @@ jobs:
           output-name: 'bot-user-id'
 
       - name: "👤 Set Up the GitHub App / Bot as a Git User"
+        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         shell: bash --noprofile --norc -euo pipefail -x  {0}
         run: |
           git config --global  user.name   "${APP_SLUG}[bot]"
@@ -76,6 +89,7 @@ jobs:
           BOT_USER_ID: ${{ steps['get-bot-user-id'].outputs['bot-user-id'] }}
       
       - name: "🔄 Mirror Repository"
+        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         id: 'mirror'
         uses: './.github/actions/git-mirror'
         with:
@@ -85,7 +99,7 @@ jobs:
           'target-token':        ${{ secrets['TARGET_TOKEN'] || steps['app-token'].outputs['token'] }}
 
       - name: "📝 Log Mirroring Step Metadata"
-        if: ${{ always() }}
+        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' && always() }}
         shell: bash
         run: |
           echo "${MIRROR_STEP_JSON}" | jq -C .
