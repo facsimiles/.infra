@@ -42,10 +42,7 @@ jobs:
         with:
           'source-repo-url': ${{ vars['SOURCE_REPO_URL'] }}
           'target-repo-url': https://github.com/facsimiles/${{ vars['TARGET_GITHUB_REPO'] || fromJSON(matrix['json'])['name'] }}.git
-      
-      - name: "Mirror Repositories"
-        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
-    
+          
       - name: "📥 Checkout"
         if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         uses: 'actions/checkout@main'
