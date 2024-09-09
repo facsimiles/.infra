@@ -44,6 +44,10 @@ jobs:
             {
               "name": "mkvtoolnix"
             }
+          - |
+            {
+              "name": "graphviz"
+            }
 
     name: "🪞 Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
