@@ -28,6 +28,10 @@ jobs:
             {
               "name": "miredo"
             }
+          - |
+            {
+              "name": "turnip"
+            }
 
     name: "🪞 Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
