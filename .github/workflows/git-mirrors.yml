@@ -63,7 +63,7 @@ jobs:
         env:
           'RUNNER_DEBUG': '1'
           
-      - name: "📥 Checkout"
+      - name: "📥 Checkout ${{ github.repository }}"
         if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         uses: 'actions/checkout@main'
 
