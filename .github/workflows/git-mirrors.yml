@@ -32,6 +32,10 @@ jobs:
             {
               "name": "turnip"
             }
+          - |
+            {
+              "name": "launchpad"
+            }
 
     name: "🪞 Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
