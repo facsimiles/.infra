@@ -77,33 +77,11 @@ jobs:
           'owner': ${{ github.repository_owner }}
           'repositories': "${{ fromJSON(matrix['json'])['name'] }}"
 
-      - name: "🆔 Get GitHub App / Bot User ID"
+      - name: "🆔 Get GitHub App/Bot User ID and 👤 Set Git Config"
         if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
-        id: 'get-bot-user-id'
-        uses: 'actions/github-script@v7'
+        uses: 'actions-rindeal/git-config-user-bot@master'
         with:
-          script: |
-            const [appSlug, outputName] = [process.env['app-slug'], process.env['output-name']]
-            if ( ! appSlug || ! outputName ) throw new Error("Missing env vars")
-            github.rest.users.getByUsername({
-              username: `${appSlug}[bot]`
-            })
-            .then(response => {
-              core.setOutput(outputName, response.data.id)
-            })
-        env:
-          app-slug: ${{ steps['app-token'].outputs['app-slug'] }}
-          output-name: 'bot-user-id'
-
-      - name: "👤 Set Up the GitHub App / Bot as a Git User"
-        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
-        shell: bash --noprofile --norc -euo pipefail -x  {0}
-        run: |
-          git config --global  user.name   "${APP_SLUG}[bot]"
-          git config --global  user.email  "${BOT_USER_ID}+${APP_SLUG}[bot]@users.noreply.github.com"
-        env:
-          APP_SLUG:    ${{ steps['app-token'].outputs['app-slug'] }}
-          BOT_USER_ID: ${{ steps['get-bot-user-id'].outputs['bot-user-id'] }}
+          'app-slug': ${{ steps['app-token'].outputs['app-slug'] }}
       
       - name: "🔄 Mirror Repository"
         if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
