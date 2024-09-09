@@ -40,6 +40,10 @@ jobs:
             {
               "name": "inkscape"
             }
+          - |
+            {
+              "name": "mkvtoolnix"
+            }
 
     name: "🪞 Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
