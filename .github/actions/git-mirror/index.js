@@ -355,7 +355,7 @@ async function main() {
     await withCwd(clonedRepoPath, async () => {
       credentialManager.setupLocal()
       
-      exec('git', ['push', '--verbose', '--progress', '--mirror', '--', credentialManager.remoteUrl])
+      exec('git', ['push', '--verbose', '--progress', '--mirror', '--force', '--', credentialManager.remoteUrl])
 
       // Get last commit hash
       const lastCommitHash = exec('git', ['rev-parse', 'HEAD']).trim()
