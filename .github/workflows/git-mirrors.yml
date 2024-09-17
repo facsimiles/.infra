@@ -94,6 +94,7 @@ jobs:
       # Get a User API stopped working for bot users, see:
       #   https://github.com/orgs/community/discussions/138861
       - name: "👤 Set Git User"
+        if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         shell: bash
         run: |
           set -x
