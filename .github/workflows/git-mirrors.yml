@@ -88,22 +88,14 @@ jobs:
           'owner': ${{ github.repository_owner }}
           'repositories': "${{ fromJSON(matrix['json'])['name'] }}"
 
-      # - name: "🆔 Get GitHub App/Bot User ID and 👤 Set Git Config"
-      #   if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
-      #   uses: 'actions-rindeal/git-config-user-bot@master'
-      #   with:
-      #     'app-slug': ${{ steps['app-token'].outputs['app-slug'] }}
-
-      # Get a User API stopped working for bot users, see:
-      #   https://github.com/orgs/community/discussions/138861
-      - name: "👤 Set Git User"
+      - name: "🆔 Set GitHub App/Bot 🤖 as Git User 👤"
         if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
-        shell: bash
-        run: |
-          set -x
-          git config --global user.name  'facsimiles-push[bot]'
-          git config --global user.email '180179525+facsimiles-push[bot]@users.noreply.github.com'
-      
+        uses: 'actions-rindeal/git-identity-from-username@v2'
+        with:
+         'username': ${{ format('{0}[bot]', steps['app-token'].outputs['app-slug']) }}
+         'failover-name': 'facsimiles-push[bot]'
+         'failover-email': '180179525+facsimiles-push[bot]@users.noreply.github.com'
+
       - name: "🔄 Mirror Repository"
         if: ${{ steps['verify-refs'].outputs['refs-differ'] == 'true' }}
         id: 'mirror'
