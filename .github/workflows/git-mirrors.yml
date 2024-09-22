@@ -55,6 +55,10 @@ jobs:
             {
               "name": "ctx"
             }
+          - |
+            {
+              "name": "libre-menu-editor"
+            }
 
     name: "🪞 Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
