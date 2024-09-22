@@ -55,10 +55,11 @@ jobs:
             {
               "name": "ctx"
             }
-          - |
-            {
-              "name": "libre-menu-editor"
-            }
+          # contains `pull` refs which GitHub refuses to accept, needs to wait for refs whitelist/blacklist feature
+          # - |
+          #   {
+          #     "name": "libre-menu-editor"
+          #   }
 
     name: "🪞 Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
