@@ -60,6 +60,10 @@ jobs:
           #   {
           #     "name": "libre-menu-editor"
           #   }
+          - |
+            {
+              "name": "blackbox"
+            }
 
     name: "🪞 Mirror `${{ fromJSON(matrix['json'])['name'] }}`"
   
