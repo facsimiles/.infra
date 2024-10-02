@@ -51,10 +51,10 @@ jobs:
             {
               "name": "graphviz"
             }
-          - |
-            {
-              "name": "ctx"
-            }
+          # - |
+          #  {
+          #    "name": "ctx"
+          #  }
           # contains `pull` refs which GitHub refuses to accept, needs to wait for refs whitelist/blacklist feature
           # - |
           #   {
